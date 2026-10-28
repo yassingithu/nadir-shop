@@ -14,6 +14,7 @@ import CommandePage from "./pages/CommandePage";
 import SuiviPage from "./pages/SuiviPage";
 import AdminApp from "./admin/AdminApp";
 
+const EMAIL_CONTACT = "contact@swtfamily.com";
 const LANGUES: [Langue, string][] = [["fr", "FR"], ["en", "EN"], ["ar", "عربي"]];
 
 /** Dans l'application de bureau : barre pour revenir à l'administration quand on regarde la boutique. */
@@ -102,6 +103,7 @@ function Pied() {
         <div className="col-span-2 md:col-span-1"><p className="flex items-center gap-3 text-lg font-bold tracking-[0.18em] uppercase"><img src="/logo.png" alt="" className="h-10 w-auto" />{reglages.nom_boutique}</p><p className="mt-3 text-sm opacity-70 max-w-xs">{t("Commande sécurisée : vous ne payez qu'à la livraison ou après votre virement.")}</p></div>
         <ul className={col}><li className="font-semibold">{t("Boutique")}</li>{categories.map((c) => <li key={c.slug}><Link className="hover:underline" to={`/boutique?cat=${c.slug}`}>{tr(c.nom)}</Link></li>)}<li><Link className="hover:underline" to="/boutique?promo=1">{t("Promotions")}</Link></li></ul>
         <ul className={col}><li className="font-semibold">{t("Aide")}</li><li><Link className="hover:underline" to="/suivi">{t("Suivre ma commande")}</Link></li>
+          <li><a className="hover:underline" href={`mailto:${EMAIL_CONTACT}`} data-testid="email-contact" dir="ltr">{EMAIL_CONTACT}</a></li>
           {reglages.whatsapp && <li><a className="hover:underline" href={`https://wa.me/${reglages.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">WhatsApp</a></li>}</ul>
         <ul className={col}><li className="font-semibold">{t("Modes de paiement")}</li><li>{t("Paiement à la livraison")}</li><li>{t("Virement bancaire")}</li></ul>
       </div>

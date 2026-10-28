@@ -10,7 +10,7 @@ export default function Accueil() {
   const { produits, categories, reglages } = useDonnees();
   useSeo({
     titre: `${reglages.nom_boutique} – ${t("Nouvelle collection")}`, description: t("Livraison à Tanger et partout au Maroc. Paiement à la livraison ou par virement."),
-    donnees: { "@context": "https://schema.org", "@type": "Store", name: reglages.nom_boutique, areaServed: [{ "@type": "City", name: "Tanger" }, { "@type": "Country", name: "Maroc" }], paymentAccepted: "Cash on delivery, bank transfer", currenciesAccepted: "MAD" },
+    donnees: { "@context": "https://schema.org", "@type": "Store", name: reglages.nom_boutique, email: "contact@swtfamily.com", areaServed: [{ "@type": "City", name: "Tanger" }, { "@type": "Country", name: "Maroc" }], paymentAccepted: "Cash on delivery, bank transfer", currenciesAccepted: "MAD" },
   });
   return (
     <div className="space-y-14 sm:space-y-20 -mt-6 sm:-mt-8">
