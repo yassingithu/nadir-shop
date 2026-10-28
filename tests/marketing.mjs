@@ -53,6 +53,12 @@ ok("réglages de contact enregistrés", T.reglages[0].whatsapp === "212600000000
 await p.goto(BASE + "/"); await p.waitForSelector('[data-testid="social-instagram"]');
 ok("le site reprend les nouvelles coordonnées", (await p.getAttribute('[data-testid="whatsapp-pied"]', "href")).includes("212600000000") && (await p.textContent('[data-testid="email-contact"]')) === "info@swtfamily.com");
 
+// ── Sauvegarde
+await p.goto(BASE + "/admin/reglages"); await p.waitForSelector('[data-testid="sauvegarde"]');
+const dl = p.waitForEvent("download"); await p.click('[data-testid="sauvegarde"]'); const d = await dl; await d.saveAs("/tmp/claude-0/ns/sauv.json");
+const sv = JSON.parse((await import("node:fs")).readFileSync("/tmp/claude-0/ns/sauv.json", "utf8"));
+ok("sauvegarde : fichier JSON avec produits, commandes et réglages", sv.produits?.length >= 1 && sv.commandes?.length >= 1 && sv.reglages?.length === 1 && d.suggestedFilename().startsWith("sauvegarde-sweet-family-"));
+
 // ── Campagnes
 await p.goto(BASE + "/admin/newsletter"); await p.waitForSelector('[data-testid="camp-sujet"]');
 await p.click('[data-testid="camp-envoyer"]'); ok("campagne vide refusée", await p.getByText("sujet et le message sont obligatoires").isVisible());

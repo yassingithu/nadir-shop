@@ -44,6 +44,31 @@ export function Categories() {
   );
 }
 
+const TABLES_SAUVEGARDE = ["reglages", "categories", "produits", "variantes", "commandes", "lignes_commande", "mouvements_stock", "codes_promo", "avis", "abonnes_newsletter", "campagnes", "equipe"];
+/** Télécharge un fichier JSON contenant toutes les données de la boutique (produits, commandes, clients abonnés…). */
+function BoutonSauvegarde() {
+  const [etat, setEtat] = useState(""), [occupe, setOccupe] = useState(false);
+  const lancer = async () => {
+    setOccupe(true); setEtat("");
+    const sauv: Record<string, unknown> = { sauvegarde_le: new Date().toISOString() }; const manque: string[] = [];
+    for (const t of TABLES_SAUVEGARDE) {
+      const { data, error } = await sb().from(t).select("*").limit(100000);
+      if (error) manque.push(t); else sauv[t] = data;
+    }
+    const u = URL.createObjectURL(new Blob([JSON.stringify(sauv, null, 2)], { type: "application/json" }));
+    const el = document.createElement("a"); el.href = u; el.download = `sauvegarde-sweet-family-${new Date().toISOString().slice(0, 10)}.json`; el.click(); URL.revokeObjectURL(u);
+    setEtat(manque.length ? `Sauvegarde téléchargée, sauf : ${manque.join(", ")}.` : "Sauvegarde téléchargée. Gardez-la dans un endroit sûr (elle contient les coordonnées de vos clients)."); setOccupe(false);
+  };
+  return (
+    <div className="border-t trait pt-5 mt-2">
+      <h2 className="font-bold">Sauvegarde</h2>
+      <p className="text-sm opacity-70 mb-3">Télécharge un fichier avec tous vos produits, commandes, codes promo, avis et abonnés. Faites-le régulièrement (par exemple chaque semaine). Les photos restent hébergées en ligne et ne sont pas dans le fichier.</p>
+      <button type="button" className="btn-ligne" onClick={() => void lancer()} disabled={occupe} data-testid="sauvegarde">Télécharger une sauvegarde</button>
+      {etat && <p className="text-sm mt-2" style={{ color: "var(--stock)" }} data-testid="sauvegarde-etat">{etat}</p>}
+    </div>
+  );
+}
+
 export function Reglages() {
   const [r, setR] = useState<Reg | null>(null), [err, setErr] = useState(""), [msg, setMsg] = useState("");
   useEffect(() => { (async () => { try { setR(await ok<Reg>(sb().from("reglages").select("*").eq("id", 1).single())); } catch (e) { setErr((e as Error).message); } })(); }, []);
@@ -80,6 +105,7 @@ export function Reglages() {
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!r.bienvenue_actif} onChange={(e) => setR({ ...r, bienvenue_actif: e.target.checked })} data-testid="reg-bienvenue_actif" />Envoyer automatiquement un e-mail de bienvenue aux nouveaux abonnés</label>
       {r.bienvenue_actif && <>{champ("bienvenue_sujet", "Sujet de l'e-mail de bienvenue")}<label className="block text-sm"><span className="font-medium">Message de bienvenue</span><textarea className="champ mt-1 !h-32 py-3" value={r.bienvenue_texte ?? ""} onChange={(e) => setR({ ...r, bienvenue_texte: e.target.value })} /></label></>}
       <button className="btn-plein" data-testid="reg-enregistrer">Enregistrer</button>
+      <BoutonSauvegarde />
     </form>
   );
 }
