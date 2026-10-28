@@ -1,3 +1,4 @@
+import { echapper } from "./csv";
 import { useEffect, useState } from "react";
 import { ok, sb, slugify, type Cat, type Reg } from "./db";
 import { TEXTES_SITE, type Surcharges } from "../lib/i18n";
@@ -155,7 +156,7 @@ export function Newsletter() {
   const lien = (a: Abonne) => `${location.origin}/newsletter/desabonnement?t=${a.token}`;
   const copier = async () => { try { await navigator.clipboard.writeText(actifs.map((a) => a.email).join(", ")); setMsg(`${actifs.length} adresses copiées : collez-les dans le champ « Cci » de votre messagerie.`); } catch { setErr("Copie impossible : sélectionnez les adresses à la main."); } };
   const exporter = () => {
-    const csv = "﻿email;langue;inscrit_le;lien_desinscription\r\n" + actifs.map((a) => [a.email, a.langue, a.created_at.slice(0, 10), lien(a)].join(";")).join("\r\n");
+    const csv = "﻿email;langue;inscrit_le;lien_desinscription\r\n" + actifs.map((a) => [a.email, a.langue, a.created_at.slice(0, 10), lien(a)].map(echapper).join(";")).join("\r\n");
     const u = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" })); const el = document.createElement("a"); el.href = u; el.download = "newsletter-abonnes.csv"; el.click(); URL.revokeObjectURL(u);
   };
   const changer = async (a: Abonne, actif: boolean) => { try { await ok(sb().from("abonnes_newsletter").update({ actif }).eq("id", a.id)); await charger(); } catch (e) { setErr((e as Error).message); } };

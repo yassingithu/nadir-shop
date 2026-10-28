@@ -2,7 +2,9 @@
 export const COLONNES = ["slug", "nom_fr", "nom_en", "nom_ar", "categorie", "prix", "prix_barre", "taille", "stock", "actif"] as const;
 export type LigneCsv = Record<(typeof COLONNES)[number], string>;
 
-const echapper = (v: string) => (/[;"\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+/** Une cellule qui commence par = + - @ serait exécutée comme une formule par Excel : on la neutralise par une apostrophe. */
+const neutraliser = (v: string) => (/^[=+\-@\t\r]/.test(v) && !/^-?\d+([.,]\d+)?$/.test(v) ? "'" + v : v);
+export const echapper = (brut: string) => { const v = neutraliser(brut); return /[;"\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
 export const versCsv = (lignes: LigneCsv[]) => "﻿" + [COLONNES.join(";"), ...lignes.map((l) => COLONNES.map((c) => echapper(l[c] ?? "")).join(";"))].join("\r\n");
 
 /** Découpe un texte CSV (guillemets, séparateur « ; » ou « , » détecté sur la première ligne). */
