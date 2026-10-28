@@ -25,6 +25,9 @@ function depuisSupabase(u: any): Utilisateur | null {
 function lireDemo(): Utilisateur | null { try { return JSON.parse(localStorage.getItem(CLE_DEMO) || "null"); } catch { return null; } }
 function ecrireDemo(u: Utilisateur | null) { try { if (u) localStorage.setItem(CLE_DEMO, JSON.stringify(u)); else localStorage.removeItem(CLE_DEMO); } catch { /* ignoré */ } }
 
+/** Page où ramener le client après confirmation par e-mail (ex. /commande), si elle figure dans l'adresse courante. */
+const retourDemande = () => { try { const r = new URLSearchParams(location.search).get("retour") ?? ""; return r.startsWith("/") && !r.startsWith("//") ? r : ""; } catch { return ""; } };
+
 export function ComptesProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Utilisateur | null>(supabase ? null : lireDemo());
   const [pret, setPret] = useState(!supabase);
@@ -40,7 +43,7 @@ export function ComptesProvider({ children }: { children: ReactNode }) {
     user, pret, recuperation,
     inscrire: async ({ email, mdp, nom, telephone }) => {
       if (!supabase) { const u = { id: "demo", email, profil: { ...VIDE, nom, telephone } }; ecrireDemo(u); setUser(u); return "connecte"; }
-      const { data, error } = await supabase.auth.signUp({ email: email.trim(), password: mdp, options: { data: { nom, telephone }, emailRedirectTo: location.origin + "/compte" } });
+      const { data, error } = await supabase.auth.signUp({ email: email.trim(), password: mdp, options: { data: { nom, telephone }, emailRedirectTo: location.origin + "/compte" + (retourDemande() ? "?retour=" + encodeURIComponent(retourDemande()) : "") } });
       if (error) throw error;
       // Adresse déjà inscrite : Supabase renvoie un utilisateur sans identité, sans erreur
       if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) throw new Error("User already registered");
