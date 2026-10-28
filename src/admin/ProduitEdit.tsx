@@ -25,7 +25,7 @@ export default function ProduitEdit() {
   const { id } = useParams(), nouveau = id === "nouveau", nav = useNavigate();
   const [p, setP] = useState<Prod>({ ...vide, id: crypto.randomUUID() });
   const [lignes, setLignes] = useState<Ligne[]>([]), [cats, setCats] = useState<Cat[]>([]);
-  const [tailles, setTailles] = useState(""), [msg, setMsg] = useState(""), [err, setErr] = useState(""), [envoi, setEnvoi] = useState(false), [prixTxt, setPrixTxt] = useState(""), [barreTxt, setBarreTxt] = useState("");
+  const [avance, setAvance] = useState(false), [tailles, setTailles] = useState(""), [msg, setMsg] = useState(""), [err, setErr] = useState(""), [envoi, setEnvoi] = useState(false), [prixTxt, setPrixTxt] = useState(""), [barreTxt, setBarreTxt] = useState("");
   useEffect(() => {
     (async () => {
       try {
@@ -117,15 +117,25 @@ export default function ProduitEdit() {
         <label className="flex items-end gap-2 text-sm pb-3"><input type="checkbox" checked={p.actif} onChange={(e) => maj("actif", e.target.checked)} />En vente sur la boutique</label>
       </section>
       <section>
-        <h2 className="font-bold mb-2">Tailles et stock</h2>
-        <div className="flex flex-wrap gap-2 mb-3"><input className="champ max-w-xs" placeholder="Ex. S, M, L, XL (ou Unique)" value={tailles} onChange={(e) => setTailles(e.target.value)} data-testid="tailles" /><button type="button" className="btn-ligne h-12" onClick={ajouterTailles} data-testid="ajouter-tailles">Ajouter</button></div>
-        {lignes.length > 0 && <table className="w-full text-sm border trait"><thead className="bg-[#f4f4f4]"><tr><th className="text-start p-2">Taille</th><th className="text-start p-2">Stock</th><th className="text-start p-2">Prix particulier</th><th className="p-2">Actif</th><th /></tr></thead>
-          <tbody>{lignes.map((l, i) => <tr key={l.id ?? l.taille} className="border-t trait" data-testid="ligne-taille">
-            <td className="p-2 font-medium">{l.taille}</td>
-            <td className="p-2"><input type="number" min={0} className="champ h-10 w-24" value={l.stock} onChange={(e) => setLignes(lignes.map((x, j) => j === i ? { ...x, stock: e.target.value === "" ? 0 : Math.trunc(Number(e.target.value)) } : x))} data-testid={`stock-${l.taille}`} /></td>
-            <td className="p-2"><input className="champ h-10 w-28" placeholder="= prix du produit" value={l.prix} onChange={(e) => setLignes(lignes.map((x, j) => j === i ? { ...x, prix: e.target.value } : x))} /></td>
-            <td className="p-2 text-center"><input type="checkbox" checked={l.actif} onChange={(e) => setLignes(lignes.map((x, j) => j === i ? { ...x, actif: e.target.checked } : x))} /></td>
-            <td className="p-2 text-end"><button type="button" onClick={() => void retirer(i)} aria-label={`Retirer ${l.taille}`}><Trash2 className="h-4 w-4 opacity-60 hover:opacity-100" /></button></td></tr>)}</tbody></table>}
+        <h2 className="font-bold mb-1">Tailles et stock</h2>
+        <p className="text-sm opacity-70 mb-3">1. Cliquez sur chaque taille que vous vendez. &nbsp;2. Indiquez combien de pièces vous avez dans chaque taille (utilisez + et −). <br />Pas de tailles (chaussures, accessoire…) ? Cliquez sur « Taille unique » ou écrivez la vôtre (ex. 40, 42).</p>
+        <div className="flex flex-wrap gap-2 mb-3" data-testid="choix-tailles">{["XS", "S", "M", "L", "XL", "XXL", "3XL", "Unique"].map((t) => { const deja = lignes.some((l) => l.taille.toLowerCase() === t.toLowerCase()); return <button key={t} type="button" disabled={deja} onClick={() => setLignes([...lignes, { taille: t, stock: 1, prix: "", actif: true }])} data-testid={`choisir-${t}`} className={`h-10 min-w-12 px-3 border trait text-sm ${deja ? "bg-black text-white" : "hover:bg-[#ececec]"}`}>{deja ? "✓ " : "+ "}{t === "Unique" ? "Taille unique" : t}</button>; })}</div>
+        <div className="flex flex-wrap gap-2 mb-4"><input className="champ max-w-xs" placeholder="Autre taille, ex. 40, 42 ou 2XL" value={tailles} onChange={(e) => setTailles(e.target.value)} data-testid="tailles" /><button type="button" className="btn-ligne h-12" onClick={ajouterTailles} data-testid="ajouter-tailles">Ajouter</button></div>
+        {lignes.length > 0 && <>
+          <div className="border trait divide-y divide-[#e5e5e5]">{lignes.map((l, i) => { const fixer = (n: number) => setLignes(lignes.map((x, j) => j === i ? { ...x, stock: Math.max(0, Math.trunc(n)) } : x)); return (
+            <div key={l.id ?? l.taille} className="flex flex-wrap items-center gap-3 p-3" data-testid="ligne-taille">
+              <span className="w-20 font-semibold text-lg">{l.taille === "Unique" ? "Unique" : l.taille}</span>
+              <div className="flex items-center">
+                <button type="button" className="h-10 w-10 border trait text-xl" onClick={() => fixer(l.stock - 1)} aria-label={`Une pièce de moins en ${l.taille}`}>−</button>
+                <input type="number" min={0} className="champ h-10 w-20 text-center" value={l.stock} onChange={(e) => fixer(e.target.value === "" ? 0 : Number(e.target.value))} data-testid={`stock-${l.taille}`} aria-label={`Pièces en stock en ${l.taille}`} />
+                <button type="button" className="h-10 w-10 border trait text-xl" onClick={() => fixer(l.stock + 1)} aria-label={`Une pièce de plus en ${l.taille}`}>+</button>
+              </div>
+              <span className="text-sm opacity-70">{l.stock === 0 ? "épuisé" : l.stock === 1 ? "pièce en stock" : "pièces en stock"}</span>
+              {avance && <><input className="champ h-10 w-36" placeholder="Prix spécial (MAD)" value={l.prix} onChange={(e) => setLignes(lignes.map((x, j) => j === i ? { ...x, prix: e.target.value } : x))} aria-label={`Prix particulier ${l.taille}`} /><label className="text-sm flex items-center gap-1"><input type="checkbox" checked={l.actif} onChange={(e) => setLignes(lignes.map((x, j) => j === i ? { ...x, actif: e.target.checked } : x))} />Visible</label></>}
+              <button type="button" className="ms-auto text-sm underline opacity-70 hover:opacity-100 flex items-center gap-1" onClick={() => void retirer(i)} aria-label={`Retirer ${l.taille}`}><Trash2 className="h-4 w-4" />Retirer</button>
+            </div>); })}</div>
+          <p className="text-sm mt-2"><b>Total : {lignes.reduce((n, l) => n + l.stock, 0)} pièces</b> &nbsp;·&nbsp; <label className="inline-flex items-center gap-1 opacity-70"><input type="checkbox" checked={avance} onChange={(e) => setAvance(e.target.checked)} />Options avancées (prix différent selon la taille)</label></p>
+        </>}
       </section>
       <section>
         <h2 className="font-bold mb-2">Photos</h2>
