@@ -44,7 +44,9 @@ jobs:
           npm install --no-audit --no-fund
           npm version "1.0.${GITHUB_RUN_NUMBER}" --no-git-tag-version
           set +e
-          for essai in 1 2 3; do
+          if [ "$RUNNER_OS" = "macOS" ]; then sudo mdutil -a -i off >/dev/null 2>&1 || true; fi
+          for essai in 1 2 3 4; do
+            if [ "$RUNNER_OS" = "macOS" ]; then for v in /Volumes/Sweet*; do [ -e "$v" ] && hdiutil detach -force "$v" >/dev/null 2>&1; done; sleep 3; fi
             rm -rf dist
             npm run ${{ matrix.commande }} 2>&1 | tee construction.log
             code=${PIPESTATUS[0]}
