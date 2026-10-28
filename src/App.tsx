@@ -105,7 +105,7 @@ function Pied() {
           {reglages.whatsapp && <li><a className="hover:underline" href={`https://wa.me/${reglages.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">WhatsApp</a></li>}</ul>
         <ul className={col}><li className="font-semibold">{t("Modes de paiement")}</li><li>{t("Paiement à la livraison")}</li><li>{t("Virement bancaire")}</li></ul>
       </div>
-      <div className="border-t trait py-5 text-center text-xs opacity-60">© {new Date().getFullYear()} {reglages.nom_boutique}</div>
+      <div className="border-t trait py-5 text-center text-xs opacity-60">© {new Date().getFullYear()} {reglages.nom_boutique}<Link to="/admin" rel="nofollow" className="ms-4 opacity-50 hover:opacity-100 hover:underline" data-testid="lien-admin">Admin</Link></div>
     </footer>
   );
 }
