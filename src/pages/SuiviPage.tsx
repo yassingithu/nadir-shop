@@ -6,7 +6,7 @@ import { suivre } from "../lib/api";
 const STATUTS: Record<string, string> = { recue: "Reçue", confirmee: "Confirmée", expediee: "Expédiée", livree: "Livrée", annulee: "Annulée" };
 export default function SuiviPage() {
   const { t, prix } = useLangue();
-  useSeo({ titre: t("Suivre ma commande") + " | Nadir Shop", noindex: true });
+  useSeo({ titre: t("Suivre ma commande") + " | Sweet Family", noindex: true });
   const [num, setNum] = useState(""); const [tel, setTel] = useState("");
   const [res, setRes] = useState<Awaited<ReturnType<typeof suivre>> | "aucune" | null>(null);
   const chercher = async (e: React.FormEvent) => {

@@ -9,7 +9,7 @@ import Visuel from "../lib/Visuel";
 
 export default function PanierPage() {
   const { t, tr, prix } = useLangue();
-  useSeo({ titre: t("Panier") + " | Nadir Shop", noindex: true });
+  useSeo({ titre: t("Panier") + " | Sweet Family", noindex: true });
   const { produits, reglages } = useDonnees();
   const { lignes, changer, retirer } = usePanier();
   const d = detail(lignes, produits, reglages);

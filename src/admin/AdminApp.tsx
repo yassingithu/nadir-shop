@@ -35,9 +35,9 @@ export default function AdminApp() {
   // Rend l'administration « installable » sur téléphone et ordinateur (icône sur l'écran d'accueil), sans toucher à la boutique.
   useEffect(() => {
     const liens = [["manifest", "/gestion.webmanifest"], ["apple-touch-icon", "/icone-180.png"]].map(([rel, href]) => { const l = document.createElement("link"); l.rel = rel; l.href = href; document.head.appendChild(l); return l; });
-    const m = document.createElement("meta"); m.name = "theme-color"; m.content = "#111111"; document.head.appendChild(m);
+    const m = document.createElement("meta"); m.name = "theme-color"; m.content = "#1f6b7a"; document.head.appendChild(m);
     const ro = document.createElement("meta"); ro.name = "robots"; ro.content = "noindex, nofollow"; document.head.appendChild(ro);
-    const titre = document.title; document.title = "Nadir Shop Gestion";
+    const titre = document.title; document.title = "Sweet Family Gestion";
     return () => { [...liens, m, ro].forEach((x) => x.remove()); document.title = titre; };
   }, []);
   useEffect(() => {
@@ -65,7 +65,7 @@ function Coque() {
   return (
     <div className="min-h-screen md:grid md:grid-cols-[230px_1fr]">
       <aside className="bg-[#f4f4f4] border-e trait md:min-h-screen no-print">
-        <div className="px-4 h-16 flex items-center font-bold tracking-[0.14em] uppercase">Nadir Shop</div>
+        <div className="px-4 h-16 flex items-center gap-3 font-bold tracking-[0.12em] uppercase text-sm"><img src="/logo.png" alt="" className="h-9 w-auto" />Sweet Family</div>
         <nav className="flex md:block overflow-x-auto" aria-label="Administration">
           {item("/admin", <LayoutDashboard className="h-4 w-4" />, "Tableau de bord", true)}
           {item("/admin/produits", <Package className="h-4 w-4" />, "Produits")}

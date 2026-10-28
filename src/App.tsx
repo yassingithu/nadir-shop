@@ -34,7 +34,7 @@ function Annonce() {
   const s = reglages.livraison_gratuite_des;
   return (<>
     <BarreRetour />
-    <div className="text-white text-xs text-center py-2 px-4" style={{ background: "var(--encre)" }}>
+    <div className="text-white text-xs text-center py-2 px-4" style={{ background: "var(--marque)" }}>
       {modeDemo ? t("Mode démonstration : les produits et commandes ne sont pas enregistrés.") : s != null ? t("Livraison offerte dès {n}", { n: prix(s) }) + " · " + t("Paiement à la livraison ou par virement") : t("Paiement à la livraison ou par virement")}
     </div></>
   );
@@ -56,7 +56,7 @@ function Entete() {
     <header className="sticky top-0 z-30 bg-white border-b trait">
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center gap-4">
         <button className="lg:hidden" onClick={() => setMenu(true)} aria-label={t("Menu")} data-testid="menu-ouvrir"><Menu className="h-6 w-6" /></button>
-        <Link to="/" className="text-base sm:text-xl font-bold tracking-[0.14em] sm:tracking-[0.18em] uppercase whitespace-nowrap" data-testid="logo">{reglages.nom_boutique}</Link>
+        <Link to="/" className="flex items-center gap-1.5 sm:gap-3 text-[11px] sm:text-lg font-bold tracking-[0.06em] sm:tracking-[0.16em] uppercase whitespace-nowrap" style={{ color: "var(--marque)" }} data-testid="logo"><img src="/logo.png" alt="" className="h-7 sm:h-10 w-auto" />{reglages.nom_boutique}</Link>
         <nav className="hidden lg:flex items-center gap-7 ms-8" aria-label="Catégories">
           <NavLink to="/boutique?nouveautes=1" className={lien}>{t("Nouveautés")}</NavLink>
           {categories.map((c) => <NavLink key={c.slug} to={`/boutique?cat=${c.slug}`} className={lien} data-testid={`nav-${c.slug}`}>{tr(c.nom)}</NavLink>)}
@@ -99,7 +99,7 @@ function Pied() {
   return (
     <footer className="mt-24 bg-[#f4f4f4]">
       <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
-        <div className="col-span-2 md:col-span-1"><p className="text-lg font-bold tracking-[0.18em] uppercase">{reglages.nom_boutique}</p><p className="mt-3 text-sm opacity-70 max-w-xs">{t("Commande sécurisée : vous ne payez qu'à la livraison ou après votre virement.")}</p></div>
+        <div className="col-span-2 md:col-span-1"><p className="flex items-center gap-3 text-lg font-bold tracking-[0.18em] uppercase"><img src="/logo.png" alt="" className="h-10 w-auto" />{reglages.nom_boutique}</p><p className="mt-3 text-sm opacity-70 max-w-xs">{t("Commande sécurisée : vous ne payez qu'à la livraison ou après votre virement.")}</p></div>
         <ul className={col}><li className="font-semibold">{t("Boutique")}</li>{categories.map((c) => <li key={c.slug}><Link className="hover:underline" to={`/boutique?cat=${c.slug}`}>{tr(c.nom)}</Link></li>)}<li><Link className="hover:underline" to="/boutique?promo=1">{t("Promotions")}</Link></li></ul>
         <ul className={col}><li className="font-semibold">{t("Aide")}</li><li><Link className="hover:underline" to="/suivi">{t("Suivre ma commande")}</Link></li>
           {reglages.whatsapp && <li><a className="hover:underline" href={`https://wa.me/${reglages.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">WhatsApp</a></li>}</ul>

@@ -1,9 +1,9 @@
 {
   "name": "nadir-shop-gestion",
-  "productName": "Nadir Shop Gestion",
+  "productName": "Sweet Family Gestion",
   "version": "1.0.0",
-  "description": "Application de gestion de la boutique Nadir Shop (produits, stock, commandes)",
-  "author": "Nadir Shop",
+  "description": "Application de gestion de la boutique Sweet Family (produits, stock, commandes)",
+  "author": "Sweet Family",
   "main": "main.js",
   "private": true,
   "scripts": {
@@ -17,7 +17,7 @@
   },
   "build": {
     "appId": "com.nadirshop.gestion",
-    "productName": "Nadir Shop Gestion",
+    "productName": "Sweet Family Gestion",
     "directories": { "output": "dist", "buildResources": "build" },
     "files": ["main.js", "app/**", "build/icon.png"],
     "afterPack": "./signer-adhoc.js",
@@ -30,15 +30,15 @@
       "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }]
     },
     "dmg": {
-      "title": "Nadir Shop Gestion",
-      "artifactName": "Nadir-Shop-Gestion-${version}-mac-${arch}.${ext}",
+      "title": "Sweet Family Gestion",
+      "artifactName": "Sweet-Family-Gestion-${version}-mac-${arch}.${ext}",
       "contents": [{ "x": 140, "y": 190, "type": "file" }, { "x": 400, "y": 190, "type": "link", "path": "/Applications" }],
       "window": { "width": 540, "height": 380 }
     },
     "win": {
       "icon": "build/icon.png",
       "target": [{ "target": "nsis", "arch": ["x64"] }],
-      "artifactName": "Nadir-Shop-Gestion-${version}-windows.${ext}"
+      "artifactName": "Sweet-Family-Gestion-${version}-windows.${ext}"
     },
     "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true, "perMachine": false, "createDesktopShortcut": true }
   }

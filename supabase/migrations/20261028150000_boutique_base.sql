@@ -12,7 +12,7 @@ $$;
 
 create table if not exists public.reglages (
   id int primary key default 1 check (id = 1),
-  nom_boutique text not null default 'Nadir Shop',
+  nom_boutique text not null default 'Sweet Family',
   devise text not null default 'MAD',
   frais_livraison numeric(10,2) not null default 0 check (frais_livraison >= 0),
   livraison_gratuite_des numeric(10,2),

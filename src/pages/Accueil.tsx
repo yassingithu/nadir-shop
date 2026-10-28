@@ -14,12 +14,12 @@ export default function Accueil() {
   });
   return (
     <div className="space-y-14 sm:space-y-20 -mt-6 sm:-mt-8">
-      <section className="w-screen ms-[calc(50%-50vw)] text-white" style={{ background: "var(--encre)" }}>
+      <section className="w-screen ms-[calc(50%-50vw)] text-white" style={{ background: "linear-gradient(135deg, #2a8294 0%, #1f6b7a 45%, #164a56 100%)" }}>
         <div className="max-w-7xl mx-auto px-4 py-12 sm:py-20 grid md:grid-cols-[1.3fr_1fr] gap-10 items-center">
           <div>
             <h1 className="text-4xl sm:text-6xl font-bold leading-[1.05] tracking-tight" data-testid="hero-titre">{t("Nouvelle collection")}</h1>
             <p className="mt-5 text-lg opacity-80 max-w-lg">{t("Des pièces simples, bien coupées, livrées chez vous.")}</p>
-            <Link to="/boutique?nouveautes=1" className="mt-8 inline-flex items-center justify-center h-12 px-8 bg-white text-black text-sm font-semibold hover:bg-[#e8e8e8]" data-testid="hero-cta">{t("Découvrir la collection")}</Link>
+            <Link to="/boutique?nouveautes=1" className="mt-8 inline-flex items-center justify-center h-12 px-8 bg-white text-black text-sm font-semibold hover:bg-[#e8f4f6]" data-testid="hero-cta">{t("Découvrir la collection")}</Link>
           </div>
           <div className="hidden md:grid grid-cols-2 gap-3">{produits.slice(0, 2).map((p) => <Visuel key={p.id} p={p} className="aspect-[3/4] w-full" />)}</div>
         </div>

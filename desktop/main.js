@@ -1,4 +1,4 @@
-// Nadir Shop Gestion : l'administration de la boutique dans une application Mac / Windows.
+// Sweet Family Gestion : l'administration de la boutique dans une application Mac / Windows.
 // Le site (dossier « app ») est embarqué dans l'application et parle directement à la base Supabase de la boutique.
 const { app, BrowserWindow, Menu, protocol, net, shell, session, dialog } = require("electron");
 const path = require("path");
@@ -52,7 +52,7 @@ async function verifierMiseAJour(manuel) {
 function creerFenetre() {
   fenetre = new BrowserWindow({
     width: 1360, height: 900, minWidth: 960, minHeight: 640,
-    title: "Nadir Shop Gestion", backgroundColor: "#ffffff", show: false,
+    title: "Sweet Family Gestion", backgroundColor: "#ffffff", show: false,
     webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: true },
   });
   fenetre.once("ready-to-show", () => fenetre.show());
@@ -85,7 +85,7 @@ function construireMenu() {
 }
 
 app.whenReady().then(() => {
-  app.setName("Nadir Shop Gestion");
+  app.setName("Sweet Family Gestion");
   protocol.handle("app", servir);
   // Téléchargements (export Excel) : enregistrés dans « Téléchargements », sans fenêtre de choix
   session.defaultSession.on("will-download", (_e, item) => {

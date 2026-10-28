@@ -10,7 +10,7 @@ import type { Infos } from "../lib/types";
 
 export default function CommandePage() {
   const { t, prix, langue } = useLangue();
-  useSeo({ titre: t("Vos informations") + " | Nadir Shop", noindex: true });
+  useSeo({ titre: t("Vos informations") + " | Sweet Family", noindex: true });
   const { produits, reglages } = useDonnees();
   const { lignes, vider } = usePanier();
   const d = detail(lignes, produits, reglages);

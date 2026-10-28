@@ -1,4 +1,4 @@
-name: Applications Mac et Windows (Nadir Shop Gestion)
+name: Applications Mac et Windows (Sweet Family Gestion)
 
 on:
   workflow_dispatch:
@@ -73,4 +73,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           ls -lh fichiers
-          gh release create "app-v1.0.${GITHUB_RUN_NUMBER}" fichiers/* --repo "$GITHUB_REPOSITORY" --title "Nadir Shop Gestion (Mac et Windows)" --notes "Mac Apple Silicon (M1 à M4) : fichier mac-arm64. Mac Intel : mac-x64. Windows : fichier .exe."
+          gh release create "app-v1.0.${GITHUB_RUN_NUMBER}" fichiers/* --repo "$GITHUB_REPOSITORY" --title "Sweet Family Gestion (Mac et Windows)" --notes "Mac Apple Silicon (M1 à M4) : fichier mac-arm64. Mac Intel : mac-x64. Windows : fichier .exe."
