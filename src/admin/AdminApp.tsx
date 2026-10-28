@@ -32,6 +32,13 @@ function Connexion({ erreur }: { erreur?: string }) {
 
 export default function AdminApp() {
   const [etat, setEtat] = useState<Etat>("chargement");
+  // Rend l'administration « installable » sur téléphone et ordinateur (icône sur l'écran d'accueil), sans toucher à la boutique.
+  useEffect(() => {
+    const liens = [["manifest", "/gestion.webmanifest"], ["apple-touch-icon", "/icone-180.png"]].map(([rel, href]) => { const l = document.createElement("link"); l.rel = rel; l.href = href; document.head.appendChild(l); return l; });
+    const m = document.createElement("meta"); m.name = "theme-color"; m.content = "#111111"; document.head.appendChild(m);
+    const titre = document.title; document.title = "Nadir Shop Gestion";
+    return () => { [...liens, m].forEach((x) => x.remove()); document.title = titre; };
+  }, []);
   useEffect(() => {
     if (!supabase) return;
     const verifier = async () => {
