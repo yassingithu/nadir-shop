@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { Trash2 } from "lucide-react";
 import { ok, sb, slugify, type Cat, type Prod, type Var } from "./db";
 import { comparerTailles } from "../lib/tailles";
+import { completer, MESSAGE_ECHEC } from "./traduire";
 import Exemple, { type Vue } from "../lib/exemples";
 
 const GUIDE: { vue: Vue; titre: string; conseil: string }[] = [
@@ -40,6 +41,18 @@ export default function ProduitEdit() {
     })();
   }, [id, nouveau]);
 
+  const [trad, setTrad] = useState("");
+  /** Traduit automatiquement le nom et la description (anglais + arabe) à partir du français. Sans écraser ce qui est déjà écrit, sauf demande. */
+  const traduireTout = async (ecraser = false) => {
+    if (!p.nom.fr.trim() && !p.description.fr?.trim()) return;
+    setTrad("Traduction en cours…"); setErr("");
+    try {
+      const n = await completer(p.nom.fr, p.nom, ecraser), d = await completer(p.description.fr ?? "", p.description, ecraser);
+      const fusion = (cur: Prod["nom"], t: { en?: string; ar?: string }) => ({ ...cur, ...(t.en && (ecraser || !cur.en?.trim()) ? { en: t.en } : {}), ...(t.ar && (ecraser || !cur.ar?.trim()) ? { ar: t.ar } : {}) });
+      setP((x) => ({ ...x, nom: fusion(x.nom, n), description: fusion(x.description, d) }));
+      setTrad(Object.keys(n).length + Object.keys(d).length ? "Traduit automatiquement : relisez l'anglais et l'arabe avant d'enregistrer." : "");
+    } catch { setTrad(""); setErr(MESSAGE_ECHEC); }
+  };
   const maj = <K extends keyof Prod>(k: K, v: Prod[K]) => setP((x) => ({ ...x, [k]: v }));
   const ajouterTailles = () => {
     const nv = tailles.split(/[,;\n]/).map((t) => t.trim()).filter((t) => t && !lignes.some((l) => l.taille.toLowerCase() === t.toLowerCase()));
@@ -100,14 +113,15 @@ export default function ProduitEdit() {
     if (!window.confirm("Supprimer définitivement ce produit ? Les commandes déjà passées sont conservées.")) return;
     try { await ok(sb().from("produits").delete().eq("id", p.id)); nav("/admin/produits"); } catch (er) { setErr((er as Error).message); }
   };
-  const nom = (k: "fr" | "en" | "ar", label: string, dir?: "rtl") => <label className="block text-sm"><span className="font-medium">{label}</span><input className="champ mt-1" dir={dir} value={p.nom[k] ?? ""} onChange={(e) => maj("nom", { ...p.nom, [k]: e.target.value })} data-testid={`nom-${k}`} /></label>;
-  const desc = (k: "fr" | "en" | "ar", label: string, dir?: "rtl") => <label className="block text-sm"><span className="font-medium">{label}</span><textarea className="champ mt-1 h-24 py-3" dir={dir} value={p.description[k] ?? ""} onChange={(e) => maj("description", { ...p.description, [k]: e.target.value })} /></label>;
+  const nom = (k: "fr" | "en" | "ar", label: string, dir?: "rtl") => <label className="block text-sm"><span className="font-medium">{label}</span><input className="champ mt-1" dir={dir} value={p.nom[k] ?? ""} onChange={(e) => { const v = e.target.value; setP((x) => ({ ...x, nom: { ...x.nom, [k]: v } })); }} onBlur={k === "fr" ? () => void traduireTout() : undefined} data-testid={`nom-${k}`} /></label>;
+  const desc = (k: "fr" | "en" | "ar", label: string, dir?: "rtl") => <label className="block text-sm"><span className="font-medium">{label}</span><textarea className="champ mt-1 h-24 py-3" dir={dir} value={p.description[k] ?? ""} onChange={(e) => { const v = e.target.value; setP((x) => ({ ...x, description: { ...x.description, [k]: v } })); }} onBlur={k === "fr" ? () => void traduireTout() : undefined} data-testid={`desc-${k}`} /></label>;
   return (
     <form onSubmit={enregistrer} className="space-y-8">
       <div className="flex items-center justify-between gap-3"><div><Link to="/admin/produits" className="text-sm underline">← Produits</Link><h1 className="text-2xl font-bold mt-1">{nouveau ? "Nouveau produit" : p.nom.fr || "Produit"}</h1></div>
         <button className="btn-plein" disabled={envoi} data-testid="enregistrer">{envoi ? "Enregistrement…" : "Enregistrer"}</button></div>
       {err && <p role="alert" className="text-sm" style={{ color: "var(--promo)" }} data-testid="erreur">{err}</p>}
       {msg && <p className="text-sm" style={{ color: "var(--stock)" }} data-testid="message">{msg}</p>}
+      <p className="text-sm opacity-70 -mb-4">Écrivez en français : l'anglais et l'arabe se remplissent tout seuls quand vous quittez le champ. <button type="button" className="underline" onClick={() => void traduireTout(true)} data-testid="retraduire">Retraduire tout</button> <span data-testid="trad-etat" style={{ color: "var(--stock)" }}>{trad}</span></p>
       <section className="grid md:grid-cols-3 gap-4">{nom("fr", "Nom (français) *")}{nom("en", "Nom (anglais)")}{nom("ar", "Nom (arabe)", "rtl")}</section>
       <section className="grid md:grid-cols-3 gap-4">{desc("fr", "Description (français)")}{desc("en", "Description (anglais)")}{desc("ar", "Description (arabe)", "rtl")}</section>
       <section className="grid sm:grid-cols-4 gap-4">

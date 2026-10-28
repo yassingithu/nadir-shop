@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ok, sb, slugify, type Cat, type Reg } from "./db";
 import { TEXTES_SITE, type Surcharges } from "../lib/i18n";
+import { completer, traduire, MESSAGE_ECHEC } from "./traduire";
 
 export function Categories() {
   const [cats, setCats] = useState<Cat[] | null>(null), [err, setErr] = useState(""), [msg, setMsg] = useState("");
@@ -12,6 +13,9 @@ export function Categories() {
     try { await ok(sb().from("categories").insert({ slug: slugify(nv.fr), nom: nv, ordre: (cats?.length ?? 0) + 1 })); setNv({ fr: "", en: "", ar: "" }); await charger(); } catch (er) { setErr((er as Error).message); }
   };
   const sauver = async (c: Cat) => { setErr(""); setMsg(""); try { await ok(sb().from("categories").update({ nom: c.nom, ordre: c.ordre, actif: c.actif }).eq("id", c.id)); setMsg("Catégorie enregistrée."); } catch (er) { setErr((er as Error).message); } };
+  const auto = async (fr: string, actuel: { en?: string; ar?: string }, remplir: (t: { en?: string; ar?: string }) => void) => {
+    try { remplir(await completer(fr, actuel)); } catch { setErr(MESSAGE_ECHEC); }
+  };
   const maj = (id: string, f: (c: Cat) => Cat) => setCats((l) => l!.map((c) => (c.id === id ? f(c) : c)));
   const supprimer = async (c: Cat) => { if (!window.confirm(`Supprimer la catégorie « ${c.nom.fr} » ? Ses produits restent, sans catégorie.`)) return; try { await ok(sb().from("categories").delete().eq("id", c.id)); await charger(); } catch (er) { setErr((er as Error).message); } };
   if (!cats) return <p className="opacity-60">Chargement…</p>;
@@ -21,7 +25,7 @@ export function Categories() {
       {err && <p role="alert" className="mb-3 text-sm" style={{ color: "var(--promo)" }}>{err}</p>}{msg && <p className="mb-3 text-sm" style={{ color: "var(--stock)" }}>{msg}</p>}
       <ul className="space-y-2 mb-8">{cats.map((c) => (
         <li key={c.id} className="grid grid-cols-2 sm:grid-cols-[1fr_1fr_1fr_70px_auto_auto_auto] gap-2 items-center border trait p-3" data-testid="categorie">
-          <input className="champ h-10" value={c.nom.fr ?? ""} onChange={(e) => maj(c.id, (x) => ({ ...x, nom: { ...x.nom, fr: e.target.value } }))} aria-label="Français" />
+          <input className="champ h-10" value={c.nom.fr ?? ""} onChange={(e) => maj(c.id, (x) => ({ ...x, nom: { ...x.nom, fr: e.target.value } }))} onBlur={() => void auto(c.nom.fr ?? "", c.nom, (t) => maj(c.id, (x) => ({ ...x, nom: { ...x.nom, ...t } })))} aria-label="Français" />
           <input className="champ h-10" value={c.nom.en ?? ""} onChange={(e) => maj(c.id, (x) => ({ ...x, nom: { ...x.nom, en: e.target.value } }))} aria-label="Anglais" />
           <input className="champ h-10" dir="rtl" value={c.nom.ar ?? ""} onChange={(e) => maj(c.id, (x) => ({ ...x, nom: { ...x.nom, ar: e.target.value } }))} aria-label="Arabe" />
           <input className="champ h-10" type="number" value={c.ordre} onChange={(e) => maj(c.id, (x) => ({ ...x, ordre: Number(e.target.value) }))} aria-label="Ordre" />
@@ -30,7 +34,7 @@ export function Categories() {
           <button className="text-sm underline" style={{ color: "var(--promo)" }} onClick={() => void supprimer(c)}>Supprimer</button>
         </li>))}</ul>
       <form onSubmit={ajouter} className="border trait p-4 grid sm:grid-cols-[1fr_1fr_1fr_auto] gap-2">
-        <input className="champ h-10" placeholder="Nouvelle catégorie (français) *" value={nv.fr} onChange={(e) => setNv({ ...nv, fr: e.target.value })} data-testid="cat-fr" />
+        <input className="champ h-10" placeholder="Nouvelle catégorie (français) *" value={nv.fr} onChange={(e) => setNv({ ...nv, fr: e.target.value })} onBlur={() => void auto(nv.fr, nv, (t) => setNv((o) => ({ ...o, ...t })))} data-testid="cat-fr" />
         <input className="champ h-10" placeholder="Anglais" value={nv.en} onChange={(e) => setNv({ ...nv, en: e.target.value })} />
         <input className="champ h-10" dir="rtl" placeholder="Arabe" value={nv.ar} onChange={(e) => setNv({ ...nv, ar: e.target.value })} />
         <button className="btn-plein h-10" data-testid="cat-ajouter">Ajouter</button>
@@ -96,6 +100,7 @@ export function TextesSite() {
         <div key={x.fr} className="grid md:grid-cols-3 gap-2 border-b trait pb-3" data-testid="texte-ligne">
           {(["fr", "en", "ar"] as const).map((l) => <label key={l} className="text-xs block"><span className="opacity-60 uppercase">{l === "fr" ? "Français" : l === "en" ? "English" : "العربية"}</span>
             <textarea rows={2} dir={l === "ar" ? "rtl" : "ltr"} className="champ mt-1 text-sm" value={val(x.fr, l, l === "fr" ? x.fr : x[l])} onChange={(e) => modif(x.fr, l, e.target.value, "")} data-testid={`texte-${l}`} /></label>)}
+          <button type="button" className="text-xs underline justify-self-start md:col-span-3" data-testid="texte-traduire" onClick={async () => { try { const fr = sur[x.fr]?.fr ?? x.fr; const [en, ar] = await Promise.all([traduire(fr, "en"), traduire(fr, "ar")]); setSur((o) => ({ ...o!, [x.fr]: { ...(o![x.fr] ?? {}), en, ar } })); } catch { setErr(MESSAGE_ECHEC); } }}>Traduire en anglais et arabe depuis le français</button>
         </div>))}{lignes.length === 0 && <p className="opacity-60">Aucun texte ne correspond.</p>}</div>
     </div>
   );

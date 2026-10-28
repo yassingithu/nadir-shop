@@ -30,6 +30,7 @@ function filtrer(rows, qs) {
 const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*", "access-control-expose-headers": "*" };
 
 export async function monter(page) {
+  await page.route("https://api.mymemory.translated.net/**", (route) => { const u = new URL(route.request().url()); const lang = (u.searchParams.get("langpair") || "").split("|")[1]; route.fulfill({ status: 200, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify({ responseStatus: 200, responseData: { translatedText: `[${lang}] ${u.searchParams.get("q")}` } }) }); });
   await page.route("https://fake.supabase.co/**", async (route) => {
     const req = route.request(), u = new URL(req.url()), m = req.method();
     const rep = (status, body, extra = {}) => route.fulfill({ status, headers: { ...CORS, "content-type": "application/json", ...extra }, body: body === undefined ? "" : JSON.stringify(body) });
@@ -74,7 +75,7 @@ if (process.argv[1].endsWith("admin.mjs")) {
   await p.goto(BASE + "/admin/produits"); await p.waitForSelector('[data-testid="ligne-produit"]');
   await p.click('[data-testid="nouveau-produit"]'); await p.waitForSelector('[data-testid="nom-fr"]');
   await p.click('[data-testid="enregistrer"]'); ok("nom obligatoire", await p.getByText("nom en français est obligatoire").isVisible());
-  await p.fill('[data-testid="nom-fr"]', "Robe d'été"); await p.fill('[data-testid="nom-ar"]', "فستان صيفي"); await p.fill('[data-testid="prix"]', "199,50"); await p.fill('[data-testid="prix-barre"]', "249");
+  await p.fill('[data-testid="nom-fr"]', "Robe d'été"); await p.fill('[data-testid="nom-ar"]', "فستان صيفي"); await p.waitForFunction(() => document.querySelector('[data-testid="nom-en"]').value.startsWith("[en]")); ok("traduction automatique : anglais rempli, arabe déjà écrit conservé", (await p.inputValue('[data-testid="nom-en"]')) === "[en] Robe d'été" && (await p.inputValue('[data-testid="nom-ar"]')) === "فستان صيفي"); await p.fill('[data-testid="prix"]', "199,50"); await p.fill('[data-testid="prix-barre"]', "249");
   await p.fill('[data-testid="tailles"]', "XL, S, M"); await p.click('[data-testid="ajouter-tailles"]');
   await p.fill('[data-testid="stock-S"]', "4"); await p.fill('[data-testid="stock-M"]', "6");
   await p.click('[data-testid="enregistrer"]'); await p.waitForSelector('[data-testid="message"]');
@@ -83,7 +84,7 @@ if (process.argv[1].endsWith("admin.mjs")) {
   ok("3 tailles créées, stock S=4 M=6 XL=0", T.variantes.filter((v) => v.produit_id === robe.id).length === 3 && T.variantes.find((v) => v.produit_id === robe.id && v.valeurs.taille === "M").stock === 6);
   ok("mouvements de stock « réception » enregistrés (S et M)", T.mouvements_stock.filter((x) => x.motif === "reception").length === 2);
   ok("options taille créées", robe.options[0]?.cle === "taille");
-  await p.fill('[data-testid="stock-S"]', "7"); await p.click('[data-testid="enregistrer"]'); await p.waitForSelector('[data-testid="message"]');
+  await p.waitForTimeout(1200); await p.fill('[data-testid="stock-S"]', "7"); await p.click('[data-testid="enregistrer"]'); await p.waitForTimeout(1000);
   ok("correction de stock S 4→7 tracée (+3)", T.mouvements_stock.some((x) => x.motif === "correction" && x.delta === 3));
   await p.screenshot({ path: "/tmp/claude-0/ns/adm-produit.png" });
 
@@ -104,7 +105,7 @@ if (process.argv[1].endsWith("admin.mjs")) {
   ok(`annulation : stock remis (${avant} → ${avant + 2}) et statut annulée`, T.variantes.find((v) => v.id === "v1").stock === avant + 2 && T.commandes[0].statut === "annulee");
   await p.screenshot({ path: "/tmp/claude-0/ns/adm-commandes.png" });
 
-  await p.goto(BASE + "/admin/categories"); await p.waitForSelector('[data-testid="categorie"]'); await p.fill('[data-testid="cat-fr"]', "Robes"); await p.click('[data-testid="cat-ajouter"]'); await p.waitForTimeout(400);
+  await p.goto(BASE + "/admin/categories"); await p.waitForSelector('[data-testid="categorie"]'); await p.fill('[data-testid="cat-fr"]', "Robes"); await p.keyboard.press("Tab"); await p.waitForFunction(() => document.querySelector('input[placeholder="Anglais"]').value === "[en] Robes"); ok("catégorie : traduction automatique", true); await p.click('[data-testid="cat-ajouter"]'); await p.waitForTimeout(400);
   ok("catégorie ajoutée", T.categories.some((c) => c.nom.fr === "Robes"));
   await p.goto(BASE + "/admin/reglages"); await p.waitForSelector('[data-testid="reg-nom_boutique"]'); await p.fill('[data-testid="reg-frais_livraison"]', "45"); await p.fill('[data-testid="reg-virement_rib"]', "123 456"); await p.fill('[data-testid="reg-livraison_gratuite_des"]', ""); await p.click('[data-testid="reg-enregistrer"]'); await p.waitForSelector('[data-testid="reg-message"]');
   ok("réglages : frais 45, RIB, livraison gratuite supprimée (null)", T.reglages[0].frais_livraison === 45 && T.reglages[0].virement_rib === "123 456" && T.reglages[0].livraison_gratuite_des === null);
