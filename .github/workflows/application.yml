@@ -1,0 +1,63 @@
+name: Applications Mac et Windows (Nadir Shop Gestion)
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["app-v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  construire:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            commande: dist:mac
+            motif: "desktop/dist/*.dmg"
+            nom: mac
+          - os: windows-latest
+            commande: dist:win
+            motif: "desktop/dist/*.exe"
+            nom: windows
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Construire le site
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+      - name: Embarquer le site dans l'application
+        shell: bash
+        run: cp -r dist desktop/app
+      - name: Construire l'application
+        working-directory: desktop
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: |
+          npm install --no-audit --no-fund
+          npm run ${{ matrix.commande }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: application-${{ matrix.nom }}
+          path: ${{ matrix.motif }}
+
+  publier:
+    needs: construire
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: fichiers
+          merge-multiple: true
+      - name: Publier la version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -lh fichiers
+          gh release create "app-v1.0.${GITHUB_RUN_NUMBER}" fichiers/* --repo "$GITHUB_REPOSITORY" --title "Nadir Shop Gestion (Mac et Windows)" --notes "Mac Apple Silicon (M1 à M4) : fichier mac-arm64. Mac Intel : mac-x64. Windows : fichier .exe."

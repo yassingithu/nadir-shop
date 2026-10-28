@@ -3,3 +3,7 @@ dist
 .env
 .env.*
 !.env.example
+!.env.production
+desktop/app
+desktop/dist
+desktop/node_modules
