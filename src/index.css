@@ -1,0 +1,12 @@
+@tailwind base; @tailwind components; @tailwind utilities;
+:root { --encre: #1d1b18; --sable: #f6f1e9; --accent: #1f4d3f; --trait: #e4dccd; }
+html, body { background: var(--sable); color: var(--encre); font-family: Inter, system-ui, sans-serif; }
+body { -webkit-font-smoothing: antialiased; }
+.titre { font-family: "Playfair Display", serif; }
+.btn { @apply inline-flex items-center justify-center gap-2 rounded-full px-6 h-12 font-medium transition disabled:opacity-40; }
+.btn-plein { @apply btn text-white; background: var(--accent); }
+.btn-plein:hover { filter: brightness(1.12); }
+.btn-ligne { @apply btn border; border-color: var(--encre); }
+.btn-ligne:hover { background: var(--encre); color: white; }
+.champ { @apply w-full rounded-xl border bg-white px-4 h-12 focus:outline-none; border-color: var(--trait); }
+.champ:focus { border-color: var(--accent); }
