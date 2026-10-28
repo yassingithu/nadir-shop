@@ -19,5 +19,5 @@ try {
 const jour = new Date().toISOString().slice(0, 10);
 const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(([u, p]) => `  <url><loc>${(SITE + u).replace(/&/g, "&amp;")}</loc><lastmod>${jour}</lastmod><priority>${p}</priority></url>`).join("\n")}\n</urlset>\n`;
 writeFileSync("public/sitemap.xml", xml);
-writeFileSync("public/robots.txt", `User-agent: *\nDisallow: /admin\nDisallow: /panier\nDisallow: /commande\nDisallow: /suivi\n\nSitemap: ${SITE}/sitemap.xml\n`);
+writeFileSync("public/robots.txt", `User-agent: *\nDisallow: /admin\nDisallow: /panier\nDisallow: /commande\nDisallow: /suivi\nDisallow: /compte\nDisallow: /newsletter\n\nSitemap: ${SITE}/sitemap.xml\n`);
 console.log(`sitemap : ${urls.length} adresses pour ${SITE}`);

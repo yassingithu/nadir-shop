@@ -105,3 +105,38 @@ export function TextesSite() {
     </div>
   );
 }
+
+type Abonne = { id: string; email: string; langue: string; actif: boolean; token: string; source: string; created_at: string };
+/** Liste des abonnés à la newsletter : copier, exporter, retirer. */
+export function Newsletter() {
+  const [l, setL] = useState<Abonne[] | null>(null), [err, setErr] = useState(""), [msg, setMsg] = useState(""), [q, setQ] = useState("");
+  const charger = async () => { try { setL(await ok<Abonne[]>(sb().from("abonnes_newsletter").select("*").order("created_at", { ascending: false }))); } catch (e) { const m = (e as Error).message; setErr(/abonnes_newsletter/.test(m) ? "La base n'est pas à jour : exécutez le fichier SQL « sweet-family-comptes-clients.sql » dans Supabase (SQL Editor), puis rouvrez cette page." : m); } };
+  useEffect(() => { void charger(); }, []);
+  if (!l) return err ? <p role="alert" style={{ color: "var(--promo)" }}>{err}</p> : <p className="opacity-60">Chargement…</p>;
+  const actifs = l.filter((a) => a.actif);
+  const vue = l.filter((a) => !q.trim() || a.email.includes(q.trim().toLowerCase()));
+  const lien = (a: Abonne) => `${location.origin}/newsletter/desabonnement?t=${a.token}`;
+  const copier = async () => { try { await navigator.clipboard.writeText(actifs.map((a) => a.email).join(", ")); setMsg(`${actifs.length} adresses copiées : collez-les dans le champ « Cci » de votre messagerie.`); } catch { setErr("Copie impossible : sélectionnez les adresses à la main."); } };
+  const exporter = () => {
+    const csv = "﻿email;langue;inscrit_le;lien_desinscription\r\n" + actifs.map((a) => [a.email, a.langue, a.created_at.slice(0, 10), lien(a)].join(";")).join("\r\n");
+    const u = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" })); const el = document.createElement("a"); el.href = u; el.download = "newsletter-abonnes.csv"; el.click(); URL.revokeObjectURL(u);
+  };
+  const changer = async (a: Abonne, actif: boolean) => { try { await ok(sb().from("abonnes_newsletter").update({ actif }).eq("id", a.id)); await charger(); } catch (e) { setErr((e as Error).message); } };
+  const retirer = async (a: Abonne) => { if (!window.confirm(`Supprimer définitivement ${a.email} ?`)) return; try { await ok(sb().from("abonnes_newsletter").delete().eq("id", a.id)); await charger(); } catch (e) { setErr((e as Error).message); } };
+  return (
+    <div className="space-y-4">
+      <h1 className="text-2xl font-bold">Newsletter</h1>
+      <p className="text-sm opacity-70 max-w-2xl">Les visiteurs s'inscrivent depuis le bas du site ou en créant leur compte. <b>{actifs.length}</b> abonné(s) actif(s) sur {l.length}. Pour envoyer un message : copiez les adresses puis collez-les dans le champ « Cci » (copie cachée) de votre messagerie. Le fichier Excel contient aussi le lien de désinscription personnel de chaque abonné.</p>
+      <div className="flex flex-wrap gap-3 items-center">
+        <button className="btn-plein" onClick={() => void copier()} disabled={!actifs.length} data-testid="news-copier">Copier les adresses</button>
+        <button className="btn-ligne" onClick={exporter} disabled={!actifs.length} data-testid="news-export">Exporter (Excel)</button>
+        <input className="champ max-w-xs" placeholder="Rechercher une adresse" value={q} onChange={(e) => setQ(e.target.value)} />
+      </div>
+      {err && <p role="alert" className="text-sm" style={{ color: "var(--promo)" }}>{err}</p>}{msg && <p className="text-sm" style={{ color: "var(--stock)" }}>{msg}</p>}
+      <table className="w-full text-sm border trait"><thead className="bg-[var(--gris)]"><tr><th className="text-start p-2">Adresse</th><th className="text-start p-2">Langue</th><th className="text-start p-2">Inscrit le</th><th className="text-start p-2">Statut</th><th /></tr></thead>
+        <tbody>{vue.map((a) => <tr key={a.id} className="border-t trait" data-testid="abonne"><td className="p-2" dir="ltr">{a.email}</td><td className="p-2 uppercase">{a.langue}</td><td className="p-2">{a.created_at.slice(0, 10)}</td><td className="p-2">{a.actif ? "Abonné" : "Désinscrit"}</td>
+          <td className="p-2 text-end whitespace-nowrap"><button className="underline me-3" onClick={() => void changer(a, !a.actif)}>{a.actif ? "Désinscrire" : "Réactiver"}</button><button className="underline" style={{ color: "var(--promo)" }} onClick={() => void retirer(a)}>Supprimer</button></td></tr>)}
+          {vue.length === 0 && <tr><td className="p-4 opacity-60" colSpan={5}>Aucun abonné pour le moment.</td></tr>}</tbody></table>
+    </div>
+  );
+}

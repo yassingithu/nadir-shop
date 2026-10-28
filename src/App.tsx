@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter, Link, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { Menu, Search, ShoppingBag, X } from "lucide-react";
+import { Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { LangueProvider, useLangue, type Langue } from "./lib/i18n";
 import { PanierProvider, usePanier } from "./lib/panier";
 import { DonneesProvider, useDonnees } from "./lib/donnees";
+import { ComptesProvider, useCompte } from "./lib/compte";
+import { abonnerNewsletter } from "./lib/api";
 import { modeDemo } from "./lib/api";
 import Tiroir from "./lib/Tiroir";
 import Accueil from "./pages/Accueil";
@@ -12,6 +14,8 @@ import ProduitPage from "./pages/ProduitPage";
 import PanierPage from "./pages/PanierPage";
 import CommandePage from "./pages/CommandePage";
 import SuiviPage from "./pages/SuiviPage";
+import ComptePage from "./pages/ComptePage";
+import DesabonnementPage from "./pages/DesabonnementPage";
 import AdminApp from "./admin/AdminApp";
 
 const EMAIL_CONTACT = "contact@swtfamily.com";
@@ -45,6 +49,7 @@ function Entete() {
   const { langue, setLangue, t, tr } = useLangue();
   const { nombre, setOuvert } = usePanier();
   const { reglages, categories } = useDonnees();
+  const { user } = useCompte();
   const [menu, setMenu] = useState(false);
   const [rech, setRech] = useState(false);
   const [q, setQ] = useState("");
@@ -71,6 +76,7 @@ function Entete() {
           <div className="flex text-xs" role="group" aria-label="Langue">
             {LANGUES.map(([l, n]) => <button key={l} onClick={() => setLangue(l)} aria-pressed={langue === l} data-testid={`langue-${l}`} className={`px-2 h-9 ${langue === l ? "font-bold underline underline-offset-4" : "opacity-60"}`}>{n}</button>)}
           </div>
+          <Link to="/compte" className="hidden sm:grid place-items-center h-10 w-10 relative" aria-label={t("Mon compte")} data-testid="compte-lien"><User className="h-5 w-5" />{user && <span className="absolute bottom-1.5 end-1.5 h-2 w-2 rounded-full" style={{ background: "var(--stock)" }} />}</Link>
           <button onClick={() => setOuvert(true)} className="relative grid place-items-center h-10 w-10" aria-label={t("Panier")} data-testid="panier-lien">
             <ShoppingBag className="h-5 w-5" />
             {nombre > 0 && <span className="absolute top-0.5 end-0 h-4 min-w-4 px-1 rounded-full text-[10px] text-white grid place-items-center bg-[var(--marque)]" data-testid="panier-nombre">{nombre}</span>}
@@ -85,11 +91,32 @@ function Entete() {
             <li><Link className="block py-4" to="/boutique?nouveautes=1">{t("Nouveautés")}</Link></li>
             {categories.map((c) => <li key={c.slug}><Link className="block py-4" to={`/boutique?cat=${c.slug}`}>{tr(c.nom)}</Link></li>)}
             <li><Link className="block py-4" style={{ color: "var(--promo)" }} to="/boutique?promo=1">{t("Promotions")}</Link></li>
+            <li><Link className="block py-4 text-base font-semibold" to="/compte" data-testid="menu-compte">{user ? t("Mon compte") : t("Connexion / Créer mon compte")}</Link></li>
             <li><Link className="block py-4 text-base" to="/suivi">{t("Suivre ma commande")}</Link></li>
           </ul>
         </div>
       )}
     </header>
+  );
+}
+
+function Newsletter() {
+  const { t, langue } = useLangue();
+  const [email, setEmail] = useState(""), [etat, setEtat] = useState<"saisie" | "envoi" | "ok" | "erreur">("saisie");
+  const envoyer = async (e: React.FormEvent) => {
+    e.preventDefault(); setEtat("envoi");
+    try { await abonnerNewsletter(email, langue); setEtat("ok"); setEmail(""); } catch { setEtat("erreur"); }
+  };
+  return (
+    <div className="border-b trait">
+      <div className="max-w-7xl mx-auto px-4 py-8 grid md:grid-cols-2 gap-4 items-center">
+        <div><p className="font-bold text-lg">{t("Recevez nos nouveautés")}</p><p className="text-sm opacity-70">{t("Inscrivez-vous à la newsletter : nouveautés et offres, sans spam.")}</p></div>
+        {etat === "ok" ? <p style={{ color: "var(--stock)" }} data-testid="newsletter-ok">{t("Merci, vous êtes inscrit(e) !")}</p> :
+          <form onSubmit={envoyer} className="flex gap-2"><input type="email" required dir="ltr" className="champ flex-1" placeholder={t("Votre e-mail")} value={email} onChange={(e) => setEmail(e.target.value)} aria-label={t("Votre e-mail")} data-testid="newsletter-email" />
+            <button className="btn-plein" disabled={etat === "envoi"} data-testid="newsletter-envoyer">{t("S'inscrire")}</button></form>}
+        {etat === "erreur" && <p className="text-red-700 text-sm md:col-span-2" role="alert">{t("Adresse invalide ou service indisponible. Réessayez.")}</p>}
+      </div>
+    </div>
   );
 }
 
@@ -99,10 +126,11 @@ function Pied() {
   const col = "space-y-2.5 text-sm";
   return (
     <footer className="mt-24 bg-[var(--gris)]">
+      <Newsletter />
       <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
         <div className="col-span-2 md:col-span-1"><p className="flex items-center gap-3 text-lg font-bold tracking-[0.18em] uppercase"><img src="/logo.png" alt="" className="h-10 w-auto" />{reglages.nom_boutique}</p><p className="mt-3 text-sm opacity-70 max-w-xs">{t("Commande sécurisée : vous ne payez qu'à la livraison ou après votre virement.")}</p></div>
         <ul className={col}><li className="font-semibold">{t("Boutique")}</li>{categories.map((c) => <li key={c.slug}><Link className="hover:underline" to={`/boutique?cat=${c.slug}`}>{tr(c.nom)}</Link></li>)}<li><Link className="hover:underline" to="/boutique?promo=1">{t("Promotions")}</Link></li></ul>
-        <ul className={col}><li className="font-semibold">{t("Aide")}</li><li><Link className="hover:underline" to="/suivi">{t("Suivre ma commande")}</Link></li>
+        <ul className={col}><li className="font-semibold">{t("Aide")}</li><li><Link className="hover:underline" to="/compte">{t("Mon compte")}</Link></li><li><Link className="hover:underline" to="/suivi">{t("Suivre ma commande")}</Link></li>
           <li><a className="hover:underline" href={`mailto:${EMAIL_CONTACT}`} data-testid="email-contact" dir="ltr">{EMAIL_CONTACT}</a></li>
           {reglages.whatsapp && <li><a className="hover:underline" href={`https://wa.me/${reglages.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">WhatsApp</a></li>}</ul>
         <ul className={col}><li className="font-semibold">{t("Modes de paiement")}</li><li>{t("Paiement à la livraison")}</li><li>{t("Virement bancaire")}</li></ul>
@@ -114,14 +142,14 @@ function Pied() {
 
 export default function App() {
   return (
-    <LangueProvider><DonneesProvider><PanierProvider>
+    <LangueProvider><DonneesProvider><ComptesProvider><PanierProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/admin/*" element={<AdminApp />} />
           <Route path="*" element={<Boutique_ />} />
         </Routes>
       </BrowserRouter>
-    </PanierProvider></DonneesProvider></LangueProvider>
+    </PanierProvider></ComptesProvider></DonneesProvider></LangueProvider>
   );
 }
 
@@ -139,6 +167,8 @@ function Boutique_() {
             <Route path="/panier" element={<PanierPage />} />
             <Route path="/commande" element={<CommandePage />} />
             <Route path="/suivi" element={<SuiviPage />} />
+            <Route path="/compte" element={<ComptePage />} />
+            <Route path="/newsletter/desabonnement" element={<DesabonnementPage />} />
           </Routes>
         </main>
         <Pied />

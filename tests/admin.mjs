@@ -9,8 +9,9 @@ const T = { equipe: [{ user_id: UID }], reglages: [{ id: 1, nom_boutique: "Nadir
   produits: [{ id: "p1", slug: "tshirt", categorie_id: "c1", nom: { fr: "T-shirt", en: "T-shirt", ar: "" }, description: {}, prix: 120, prix_barre: null, photos: [], options: [{ cle: "taille", nom: { fr: "Taille" } }], actif: true, created_at: "2026-10-01" }],
   variantes: [{ id: "v1", produit_id: "p1", valeurs: { taille: "M" }, prix: null, stock: 2, actif: true }, { id: "v2", produit_id: "p1", valeurs: { taille: "S" }, prix: null, stock: 10, actif: true }],
   commandes: [{ id: "o1", numero: 1001, nom: "Ali", telephone: "0612345678", email: null, ville: "Rabat", adresse: "rue 1", note: null, mode_paiement: "virement", statut: "recue", paiement_recu: false, sous_total: 240, frais_livraison: 30, total: 270, created_at: new Date().toISOString() }],
-  lignes_commande: [{ id: "l1", commande_id: "o1", variante_id: "v1", nom: "T-shirt", valeurs: { taille: "M" }, prix_unitaire: 120, quantite: 2 }], mouvements_stock: [] };
-const env = { rpc: [] };
+  lignes_commande: [{ id: "l1", commande_id: "o1", variante_id: "v1", nom: "T-shirt", valeurs: { taille: "M" }, prix_unitaire: 120, quantite: 2 }], mouvements_stock: [], abonnes_newsletter: [] };
+const env = { rpc: [], meta: {} };
+export { T, env };
 
 function filtrer(rows, qs) {
   let r = [...rows];
@@ -41,9 +42,21 @@ export async function monter(page) {
       return rep(200, { access_token: "x.y.z", token_type: "bearer", expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, refresh_token: "r", user: { id: UID, email: b.email, aud: "authenticated", app_metadata: {}, user_metadata: {}, created_at: "2026-01-01" } });
     }
     if (u.pathname.includes("/storage/v1/object/")) return rep(200, { Key: u.pathname.split("/object/")[1] });
+    if (u.pathname.includes("/auth/v1/signup")) {
+      const b = JSON.parse(req.postData() || "{}"), user = { id: UID, email: b.email, aud: "authenticated", app_metadata: {}, user_metadata: b.data || {}, created_at: "2026-01-01", identities: b.email === "deja@x.com" ? [] : [{ id: "i" }] };
+      env.meta = b.data || {};
+      if (b.email === "deja@x.com") return rep(200, user);
+      return rep(200, { access_token: "x.y.z", token_type: "bearer", expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, refresh_token: "r", user });
+    }
+    if (u.pathname.endsWith("/auth/v1/user")) {
+      const b = JSON.parse(req.postData() || "{}"); if (b.data) env.meta = { ...(env.meta || {}), ...b.data };
+      return rep(200, { id: UID, email: "client@x.com", aud: "authenticated", app_metadata: {}, user_metadata: env.meta || {}, created_at: "2026-01-01" });
+    }
     if (u.pathname.includes("/rest/v1/rpc/")) {
       const nom = u.pathname.split("/rpc/")[1], b = JSON.parse(req.postData() || "{}"); env.rpc.push([nom, b]);
       if (nom === "annuler_commande") { for (const l of T.lignes_commande.filter((x) => x.commande_id === b.p_id)) T.variantes.find((v) => v.id === l.variante_id).stock += l.quantite; T.commandes.find((c) => c.id === b.p_id).statut = "annulee"; }
+      if (nom === "passer_commande") return rep(200, { numero: 1002, total: 120, mode_paiement: b.p.mode_paiement });
+      if (nom === "abonner_newsletter") { T.abonnes_newsletter.push({ id: "a" + T.abonnes_newsletter.length, email: b.p_email.toLowerCase(), langue: b.p_langue, actif: true, token: "tok" + T.abonnes_newsletter.length, source: b.p_source, created_at: new Date().toISOString() }); return rep(200, null); }
       return rep(200, null);
     }
     const t = u.pathname.split("/rest/v1/")[1], rows = T[t]; if (!rows) return rep(404, { message: "table inconnue " + t });

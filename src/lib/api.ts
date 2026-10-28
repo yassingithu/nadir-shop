@@ -38,3 +38,23 @@ export async function suivre(numero: number, telephone: string) {
   if (error) throw error;
   return data as { numero: number; statut: string; paiement_recu: boolean; total: number; mode_paiement: string } | null;
 }
+
+export type CommandeClient = { numero: number; statut: string; total: number; mode_paiement: string; paiement_recu: boolean; created_at: string; lignes_commande: { nom: string; valeurs: Record<string, string>; quantite: number }[] };
+export async function mesCommandes(): Promise<CommandeClient[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.from("commandes").select("numero, statut, total, mode_paiement, paiement_recu, created_at, lignes_commande(nom, valeurs, quantite)").order("created_at", { ascending: false });
+  if (error) throw error;
+  return data as unknown as CommandeClient[];
+}
+
+export async function abonnerNewsletter(email: string, langue: string, source = "site"): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.rpc("abonner_newsletter", { p_email: email, p_langue: langue, p_source: source });
+  if (error) throw error;
+}
+export async function desabonnerNewsletter(token: string): Promise<boolean> {
+  if (!supabase) return true;
+  const { data, error } = await supabase.rpc("desabonner_newsletter", { p_token: token });
+  if (error) throw error;
+  return !!data;
+}

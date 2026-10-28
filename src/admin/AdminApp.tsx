@@ -1,12 +1,12 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, Route, Routes } from "react-router-dom";
 import { supabase, modeDemo } from "../lib/api";
-import { LayoutDashboard, Package, ShoppingCart, Tags, Settings, LogOut, Type } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Tags, Settings, LogOut, Mail, Type } from "lucide-react";
 import Tableau from "./Tableau";
 import Produits from "./Produits";
 import ProduitEdit from "./ProduitEdit";
 import Commandes from "./Commandes";
-import { Categories, Reglages, TextesSite } from "./Divers";
+import { Categories, Newsletter, Reglages, TextesSite } from "./Divers";
 
 type Etat = "chargement" | "deconnecte" | "refuse" | "ok";
 
@@ -72,6 +72,7 @@ function Coque() {
           {item("/admin/commandes", <ShoppingCart className="h-4 w-4" />, "Commandes")}
           {item("/admin/categories", <Tags className="h-4 w-4" />, "Catégories")}
           {item("/admin/reglages", <Settings className="h-4 w-4" />, "Réglages")}
+          {item("/admin/newsletter", <Mail className="h-4 w-4" />, "Newsletter")}
           {item("/admin/textes", <Type className="h-4 w-4" />, "Textes du site")}
         </nav>
         <div className="p-4 text-sm space-y-2 hidden md:block">
@@ -88,6 +89,7 @@ function Coque() {
           <Route path="categories" element={<Categories />} />
           <Route path="reglages" element={<Reglages />} />
           <Route path="textes" element={<TextesSite />} />
+          <Route path="newsletter" element={<Newsletter />} />
         </Routes>
       </main>
     </div>

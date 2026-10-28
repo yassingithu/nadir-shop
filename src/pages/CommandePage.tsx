@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useCompte } from "../lib/compte";
 import { useLangue } from "../lib/i18n";
 import { useSeo } from "../lib/Seo";
 import { useDonnees } from "../lib/donnees";
@@ -13,11 +14,14 @@ export default function CommandePage() {
   useSeo({ titre: t("Vos informations") + " | Sweet Family", noindex: true });
   const { produits, reglages } = useDonnees();
   const { lignes, vider } = usePanier();
+  const { user, pret } = useCompte();
   const d = detail(lignes, produits, reglages);
   const [f, setF] = useState<Infos>({ nom: "", telephone: "", email: "", ville: "", adresse: "", note: "" });
   const [mode, setMode] = useState<"livraison" | "virement">("livraison");
   const [etat, setEtat] = useState<"saisie" | "envoi" | "erreur">("saisie");
   const [fait, setFait] = useState<{ numero: number; mode: string } | null>(null);
+  const [prerempli, setPrerempli] = useState(false);
+  if (user && !prerempli) { setPrerempli(true); setF((o) => ({ ...o, ...user.profil, email: user.email, note: o.note })); }
   const valide = f.nom.trim() && f.telephone.replace(/\D/g, "").length >= 9 && f.ville.trim() && f.adresse.trim();
   const champ = (cle: keyof Infos, label: string, extra: Record<string, string> = {}) => (
     <label className="block text-sm"><span className="mb-1 block font-medium">{label}</span>
@@ -29,7 +33,7 @@ export default function CommandePage() {
       <h1 className="font-bold text-3xl">{t("Merci, votre commande est enregistrée")}</h1>
       <p className="mt-6 text-sm opacity-70">{t("Numéro de commande")}</p>
       <p className="font-bold text-5xl mt-1" data-testid="numero">{fait.numero}</p>
-      <p className="mt-3 text-sm opacity-70">{t("Gardez ce numéro et votre téléphone pour suivre la commande.")}</p>
+      <p className="mt-3 text-sm opacity-70">{t("Retrouvez cette commande dans votre compte, rubrique « Mes commandes ».")}</p>
       {fait.mode === "virement" && (
         <div className="mt-8 bg-white p-6 text-start space-y-1.5 text-sm">
           <p className="font-medium">{t("Pour régler par virement :")}</p>
@@ -38,6 +42,14 @@ export default function CommandePage() {
         </div>
       )}
       <Link to="/" className="btn-plein mt-8">{t("Retour à la boutique")}</Link>
+    </div>
+  );
+  if (!pret) return <p className="opacity-60 text-center py-16">…</p>;
+  if (d.items.length && !user) return (
+    <div className="max-w-md mx-auto text-center py-12 space-y-5" data-testid="porte-compte">
+      <h1 className="font-bold text-3xl">{t("Connectez-vous pour commander")}</h1>
+      <p className="opacity-70">{t("Un compte est nécessaire pour passer commande. Votre panier est conservé.")}</p>
+      <div className="flex flex-col gap-3"><Link to="/compte?retour=/commande" className="btn-plein" data-testid="porte-connexion">{t("Se connecter")}</Link><Link to="/compte?retour=/commande&inscription=1" className="btn-ligne" data-testid="porte-inscription">{t("Créer mon compte")}</Link></div>
     </div>
   );
   if (!d.items.length) return <div className="text-center py-16"><Link to="/" className="btn-plein">{t("Continuer mes achats")}</Link></div>;
