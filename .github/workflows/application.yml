@@ -42,9 +42,15 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
         run: |
           npm install --no-audit --no-fund
+          npm version "1.0.${GITHUB_RUN_NUMBER}" --no-git-tag-version
           set +e
-          npm run ${{ matrix.commande }} 2>&1 | tee construction.log
-          code=${PIPESTATUS[0]}
+          for essai in 1 2 3; do
+            rm -rf dist
+            npm run ${{ matrix.commande }} 2>&1 | tee construction.log
+            code=${PIPESTATUS[0]}
+            [ "$code" = "0" ] && break
+            echo "Essai $essai échoué, nouvel essai"; sleep 5
+          done
           if [ "$code" != "0" ]; then
             echo "::error title=Echec de la construction::$(tail -n 25 construction.log | sed 's/%/%25/g' | tr '\n' '|' | cut -c1-3500)"
             exit 1

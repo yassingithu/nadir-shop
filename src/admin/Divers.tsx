@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ok, sb, slugify, type Cat, type Reg } from "./db";
+import { TEXTES_SITE, type Surcharges } from "../lib/i18n";
 
 export function Categories() {
   const [cats, setCats] = useState<Cat[] | null>(null), [err, setErr] = useState(""), [msg, setMsg] = useState("");
@@ -50,7 +51,7 @@ export function Reglages() {
   const enregistrer = async (e: React.FormEvent) => {
     e.preventDefault(); setErr(""); setMsg("");
     if (r.frais_livraison < 0 || (r.livraison_gratuite_des ?? 0) < 0 || r.seuil_stock_bas < 0) return setErr("Les montants ne peuvent pas être négatifs.");
-    try { const { id: _i, ...reste } = r as Reg & { id?: number }; void _i; await ok(sb().from("reglages").update(reste).eq("id", 1)); setMsg("Réglages enregistrés."); } catch (er) { setErr((er as Error).message); }
+    try { const { id: _i, textes: _t, ...reste } = r as Reg & { id?: number; textes?: unknown }; void _i; void _t; await ok(sb().from("reglages").update(reste).eq("id", 1)); setMsg("Réglages enregistrés."); } catch (er) { setErr((er as Error).message); }
   };
   return (
     <form onSubmit={enregistrer} className="space-y-5 max-w-xl">
@@ -65,5 +66,37 @@ export function Reglages() {
       <div className="grid sm:grid-cols-2 gap-4">{champ("telephone", "Téléphone")}{champ("whatsapp", "WhatsApp", "Avec l'indicatif, ex. 212612345678")}</div>
       <button className="btn-plein" data-testid="reg-enregistrer">Enregistrer</button>
     </form>
+  );
+}
+
+/** Modifier n'importe quel texte de la boutique (français, anglais, arabe). Seuls les textes changés sont enregistrés. */
+export function TextesSite() {
+  const [sur, setSur] = useState<Surcharges | null>(null), [err, setErr] = useState(""), [msg, setMsg] = useState(""), [q, setQ] = useState("");
+  useEffect(() => { (async () => { try { const r = await ok<{ textes?: Surcharges }>(sb().from("reglages").select("*").eq("id", 1).single()); setSur(r.textes ?? {}); } catch (e) { setErr((e as Error).message); } })(); }, []);
+  if (!sur) return err ? <p role="alert" style={{ color: "var(--promo)" }}>{err}</p> : <p className="opacity-60">Chargement…</p>;
+  const lignes = TEXTES_SITE.filter((x) => !q.trim() || (x.fr + x.en + x.ar + JSON.stringify(sur[x.fr] ?? {})).toLowerCase().includes(q.trim().toLowerCase()));
+  const val = (fr: string, l: "fr" | "en" | "ar", defaut: string) => sur[fr]?.[l] ?? defaut;
+  const modif = (fr: string, l: "fr" | "en" | "ar", v: string, defaut: string) => {
+    const cur = { ...(sur[fr] ?? {}), [l]: v };
+    const nettoye = Object.fromEntries(Object.entries(cur).filter(([k, x]) => x !== "" && x !== (k === "fr" ? fr : (TEXTES_SITE.find((t) => t.fr === fr) as Record<string, string>)[k]))) as Surcharges[string];
+    void defaut; const n = { ...sur }; if (Object.keys(nettoye).length) n[fr] = nettoye; else delete n[fr]; setSur(n);
+  };
+  const enregistrer = async () => {
+    setErr(""); setMsg("");
+    try { await ok(sb().from("reglages").update({ textes: sur }).eq("id", 1)); setMsg("Textes enregistrés : ils sont visibles tout de suite sur la boutique."); }
+    catch (e) { const m = (e as Error).message; setErr(/textes/.test(m) ? "La base n'est pas à jour : exécutez le fichier SQL « nadir-shop-textes.sql » dans Supabase (SQL Editor), puis réessayez." : m); }
+  };
+  return (
+    <div className="space-y-4">
+      <h1 className="text-2xl font-bold">Textes du site</h1>
+      <p className="text-sm opacity-70 max-w-2xl">Modifiez ici les phrases de la boutique dans les trois langues. Laissez un champ tel quel pour garder le texte d'origine. Ne touchez pas aux mots entre accolades, par exemple {"{n}"} : ils sont remplacés automatiquement (montant, nombre…).</p>
+      <div className="flex gap-3 items-center flex-wrap"><input className="champ max-w-sm" placeholder="Rechercher un texte (ex. virement)" value={q} onChange={(e) => setQ(e.target.value)} data-testid="textes-recherche" /><button className="btn-plein" onClick={() => void enregistrer()} data-testid="textes-enregistrer">Enregistrer</button></div>
+      {err && <p role="alert" className="text-sm" style={{ color: "var(--promo)" }}>{err}</p>}{msg && <p className="text-sm" style={{ color: "var(--stock)" }} data-testid="textes-message">{msg}</p>}
+      <div className="space-y-3">{lignes.map((x) => (
+        <div key={x.fr} className="grid md:grid-cols-3 gap-2 border-b trait pb-3" data-testid="texte-ligne">
+          {(["fr", "en", "ar"] as const).map((l) => <label key={l} className="text-xs block"><span className="opacity-60 uppercase">{l === "fr" ? "Français" : l === "en" ? "English" : "العربية"}</span>
+            <textarea rows={2} dir={l === "ar" ? "rtl" : "ltr"} className="champ mt-1 text-sm" value={val(x.fr, l, l === "fr" ? x.fr : x[l])} onChange={(e) => modif(x.fr, l, e.target.value, "")} data-testid={`texte-${l}`} /></label>)}
+        </div>))}{lignes.length === 0 && <p className="opacity-60">Aucun texte ne correspond.</p>}</div>
+    </div>
   );
 }

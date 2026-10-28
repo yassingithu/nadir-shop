@@ -106,7 +106,10 @@ const TEXTES: Record<string, { en: string; ar: string }> = {
 };
 
 export const MONNAIE = "MAD";
-type Ctx = { langue: Langue; setLangue: (l: Langue) => void; t: (fr: string, v?: Record<string, string | number>) => string; tr: (o: Tr | undefined) => string; prix: (n: number) => string };
+export type Surcharges = Record<string, Partial<Record<Langue, string>>>;
+/** Liste des textes de la boutique avec leur traduction d'origine (pour la page « Textes du site »). */
+export const TEXTES_SITE: { fr: string; en: string; ar: string }[] = Object.entries(TEXTES).map(([fr, v]) => ({ fr, ...v }));
+type Ctx = { langue: Langue; setLangue: (l: Langue) => void; t: (fr: string, v?: Record<string, string | number>) => string; tr: (o: Tr | undefined) => string; prix: (n: number) => string; setSurcharges: (s: Surcharges) => void };
 const C = createContext<Ctx>(null as unknown as Ctx);
 
 function langueInitiale(): Langue {
@@ -117,14 +120,15 @@ function langueInitiale(): Langue {
 
 export function LangueProvider({ children }: { children: ReactNode }) {
   const [langue, setL] = useState<Langue>(langueInitiale);
+  const [sur, setSurcharges] = useState<Surcharges>({});
   useEffect(() => { document.documentElement.lang = langue; document.documentElement.dir = langue === "ar" ? "rtl" : "ltr"; }, [langue]);
   const setLangue = (l: Langue) => { setL(l); try { localStorage.setItem("langue", l); } catch { /* ignoré */ } };
   const t: Ctx["t"] = (fr, v) => {
-    const base = langue === "fr" ? fr : TEXTES[fr]?.[langue] ?? fr;
+    const base = sur[fr]?.[langue]?.trim() || (langue === "fr" ? fr : TEXTES[fr]?.[langue] ?? fr);
     return v ? base.replace(/\{(\w+)\}/g, (_, k) => String(v[k] ?? "")) : base;
   };
   const tr: Ctx["tr"] = (o) => (o ? (langue === "fr" ? o.fr : o[langue] || o.fr) : "");
   const prix = (n: number) => new Intl.NumberFormat(langue === "ar" ? "ar-MA-u-nu-latn" : langue === "en" ? "en-GB" : "fr-FR", { maximumFractionDigits: 2 }).format(n) + " " + MONNAIE;
-  return <C.Provider value={{ langue, setLangue, t, tr, prix }}>{children}</C.Provider>;
+  return <C.Provider value={{ langue, setLangue, t, tr, prix, setSurcharges }}>{children}</C.Provider>;
 }
 export const useLangue = () => useContext(C);

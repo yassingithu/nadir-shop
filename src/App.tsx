@@ -16,14 +16,27 @@ import AdminApp from "./admin/AdminApp";
 
 const LANGUES: [Langue, string][] = [["fr", "FR"], ["en", "EN"], ["ar", "عربي"]];
 
+/** Dans l'application de bureau : barre pour revenir à l'administration quand on regarde la boutique. */
+const dansAppli = typeof navigator !== "undefined" && /Electron\//.test(navigator.userAgent);
+function BarreRetour() {
+  if (!dansAppli) return null;
+  return (
+    <div className="flex items-center gap-4 px-4 h-10 text-sm border-b trait bg-[#fff8e1] no-print" data-testid="barre-retour">
+      <Link to="/admin" className="font-semibold underline">← Retour à l'administration</Link>
+      <span className="opacity-60 hidden sm:inline">Vous regardez la boutique comme vos clients.</span>
+    </div>
+  );
+}
+
 function Annonce() {
   const { t, prix } = useLangue();
   const { reglages } = useDonnees();
   const s = reglages.livraison_gratuite_des;
-  return (
+  return (<>
+    <BarreRetour />
     <div className="text-white text-xs text-center py-2 px-4" style={{ background: "var(--encre)" }}>
       {modeDemo ? t("Mode démonstration : les produits et commandes ne sont pas enregistrés.") : s != null ? t("Livraison offerte dès {n}", { n: prix(s) }) + " · " + t("Paiement à la livraison ou par virement") : t("Paiement à la livraison ou par virement")}
-    </div>
+    </div></>
   );
 }
 

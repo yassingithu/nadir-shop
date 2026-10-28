@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { charger } from "./api";
+import { useLangue } from "./i18n";
 import type { Categorie, Produit, Reglages } from "./types";
 
 type D = { produits: Produit[]; categories: Categorie[]; reglages: Reglages; etat: "chargement" | "ok" | "erreur" };
@@ -8,7 +9,9 @@ const VIDE: Reglages = { nom_boutique: "Nadir Shop", frais_livraison: 0, livrais
 
 export function DonneesProvider({ children }: { children: ReactNode }) {
   const [d, setD] = useState<D>({ produits: [], categories: [], reglages: VIDE, etat: "chargement" });
-  useEffect(() => { charger().then((x) => setD({ ...x, etat: "ok" })).catch(() => setD((o) => ({ ...o, etat: "erreur" }))); }, []);
+  const { setSurcharges } = useLangue();
+  useEffect(() => { charger().then((x) => { setSurcharges(x.reglages.textes ?? {}); setD({ ...x, etat: "ok" }); }).catch(() => setD((o) => ({ ...o, etat: "erreur" }))); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return <C.Provider value={d}>{children}</C.Provider>;
 }
 export const useDonnees = () => useContext(C);

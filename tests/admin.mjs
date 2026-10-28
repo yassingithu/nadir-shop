@@ -4,7 +4,7 @@ import { chromium } from "/opt/npm-tools/node_modules/playwright/index.mjs";
 import { readFileSync, writeFileSync } from "node:fs";
 
 const BASE = "http://127.0.0.1:5192", UID = "00000000-0000-0000-0000-0000000000aa";
-const T = { equipe: [{ user_id: UID }], reglages: [{ id: 1, nom_boutique: "Nadir Shop", devise: "MAD", frais_livraison: 30, livraison_gratuite_des: 500, virement_titulaire: "", virement_banque: "", virement_rib: "", telephone: "", whatsapp: "", seuil_stock_bas: 3 }],
+const T = { equipe: [{ user_id: UID }], reglages: [{ id: 1, nom_boutique: "Nadir Shop", devise: "MAD", frais_livraison: 30, livraison_gratuite_des: 500, virement_titulaire: "", virement_banque: "", virement_rib: "", telephone: "", whatsapp: "", seuil_stock_bas: 3, textes: {} }],
   categories: [{ id: "c1", slug: "hauts", nom: { fr: "Hauts", en: "Tops", ar: "قمصان" }, ordre: 1, actif: true }],
   produits: [{ id: "p1", slug: "tshirt", categorie_id: "c1", nom: { fr: "T-shirt", en: "T-shirt", ar: "" }, description: {}, prix: 120, prix_barre: null, photos: [], options: [{ cle: "taille", nom: { fr: "Taille" } }], actif: true, created_at: "2026-10-01" }],
   variantes: [{ id: "v1", produit_id: "p1", valeurs: { taille: "M" }, prix: null, stock: 2, actif: true }, { id: "v2", produit_id: "p1", valeurs: { taille: "S" }, prix: null, stock: 10, actif: true }],
@@ -48,7 +48,7 @@ export async function monter(page) {
     const t = u.pathname.split("/rest/v1/")[1], rows = T[t]; if (!rows) return rep(404, { message: "table inconnue " + t });
     const unique = (req.headers()["accept"] || "").includes("vnd.pgrst.object");
     const prefer = req.headers()["prefer"] || "";
-    if (m === "GET" || m === "HEAD") { let r = filtrer(rows, u.searchParams); const lim = u.searchParams.get("limit"); if (lim) r = r.slice(0, Number(lim));
+    if (m === "GET" || m === "HEAD") { let r = filtrer(rows, u.searchParams); if (t === "produits" && (u.searchParams.get("select") || "").includes("variantes(")) r = r.map((x) => ({ ...x, variantes: T.variantes.filter((v) => v.produit_id === x.id), categorie: T.categories.find((c) => c.id === x.categorie_id) ?? null })); const lim = u.searchParams.get("limit"); if (lim) r = r.slice(0, Number(lim));
       if (unique) return r.length ? rep(200, r[0]) : rep(406, { code: "PGRST116", message: "JSON object requested, multiple (or no) rows returned" }); return rep(200, r); }
     if (m === "POST") { const b = JSON.parse(req.postData() || "{}"), arr = Array.isArray(b) ? b : [b]; for (const x of arr) rows.push({ created_at: new Date().toISOString(), ...x }); return rep(201, prefer.includes("return=representation") ? arr : undefined); }
     if (m === "PATCH") { const b = JSON.parse(req.postData() || "{}"), r = filtrer(rows, u.searchParams); r.forEach((x) => Object.assign(x, b)); return rep(200, prefer.includes("return=representation") ? r : undefined); }
@@ -108,6 +108,11 @@ if (process.argv[1].endsWith("admin.mjs")) {
   ok("catégorie ajoutée", T.categories.some((c) => c.nom.fr === "Robes"));
   await p.goto(BASE + "/admin/reglages"); await p.waitForSelector('[data-testid="reg-nom_boutique"]'); await p.fill('[data-testid="reg-frais_livraison"]', "45"); await p.fill('[data-testid="reg-virement_rib"]', "123 456"); await p.fill('[data-testid="reg-livraison_gratuite_des"]', ""); await p.click('[data-testid="reg-enregistrer"]'); await p.waitForSelector('[data-testid="reg-message"]');
   ok("réglages : frais 45, RIB, livraison gratuite supprimée (null)", T.reglages[0].frais_livraison === 45 && T.reglages[0].virement_rib === "123 456" && T.reglages[0].livraison_gratuite_des === null);
+  await p.goto(BASE + "/admin/textes"); await p.waitForSelector('[data-testid="textes-recherche"]'); await p.fill('[data-testid="textes-recherche"]', "Paiement à la livraison ou par virement");
+  await p.locator('[data-testid="texte-fr"]').first().fill("Paiement par virement sécurisé et/ou à la livraison"); await p.click('[data-testid="textes-enregistrer"]'); await p.waitForSelector('[data-testid="textes-message"]');
+  ok("textes du site : surcharge enregistrée", JSON.stringify(T.reglages[0].textes).includes("virement sécurisé et/ou"));
+  ok("réglages conservent les textes", T.reglages[0].textes && Object.keys(T.reglages[0].textes).length === 1);
+  await p.goto(BASE + "/"); await p.getByText("FR", { exact: true }).first().click(); await p.waitForSelector("text=Paiement par virement sécurisé et/ou à la livraison", { timeout: 8000 }); ok("la boutique affiche le texte modifié", true); await p.goto(BASE + "/admin"); await p.waitForSelector('[data-testid="deconnexion"]');
   await p.click('[data-testid="deconnexion"]'); await p.waitForSelector('[data-testid="connexion"]'); ok("déconnexion", true);
   console.log("erreurs page:", err); await b.close();
 }

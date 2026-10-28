@@ -7,17 +7,19 @@ const CLE = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined; // cl√
 export const supabase = URL && CLE ? createClient(URL, CLE) : null;
 export const modeDemo = !supabase;
 
+const COLS_REGLAGES = "nom_boutique, frais_livraison, livraison_gratuite_des, virement_titulaire, virement_banque, virement_rib, whatsapp";
+
 export async function charger(): Promise<{ produits: Produit[]; categories: Categorie[]; reglages: Reglages }> {
   if (!supabase) return { produits: PRODUITS_DEMO, categories: CATEGORIES_DEMO, reglages: REGLAGES_DEMO };
   const [p, c, r] = await Promise.all([
     supabase.from("produits").select("id, slug, nom, description, prix, prix_barre, photos, options, categorie:categories(slug), variantes(id, valeurs, prix, stock, actif)").eq("actif", true).order("created_at", { ascending: false }),
     supabase.from("categories").select("slug, nom").eq("actif", true).order("ordre"),
-    supabase.from("reglages").select("nom_boutique, frais_livraison, livraison_gratuite_des, virement_titulaire, virement_banque, virement_rib, whatsapp").eq("id", 1).single(),
+    supabase.from("reglages").select(COLS_REGLAGES + ", textes").eq("id", 1).single().then(async (x) => (x.error ? await supabase!.from("reglages").select(COLS_REGLAGES).eq("id", 1).single() : x)),
   ]);
   if (p.error || c.error || r.error) throw new Error("chargement");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const produits = (p.data as any[]).map((x) => ({ ...x, categorie: x.categorie?.slug ?? null, couleur: "#d9c7a3", variantes: (x.variantes as { actif: boolean }[]).filter((v) => v.actif) })) as Produit[];
-  return { produits, categories: c.data as Categorie[], reglages: r.data as Reglages };
+  return { produits, categories: c.data as Categorie[], reglages: r.data as unknown as Reglages };
 }
 
 export async function passerCommande(infos: Infos, mode: "livraison" | "virement", lignes: Ligne[], langue: string): Promise<{ numero: number; total: number }> {

@@ -1,6 +1,6 @@
 // Nadir Shop Gestion : l'administration de la boutique dans une application Mac / Windows.
 // Le site (dossier « app ») est embarqué dans l'application et parle directement à la base Supabase de la boutique.
-const { app, BrowserWindow, Menu, protocol, net, shell, session } = require("electron");
+const { app, BrowserWindow, Menu, protocol, net, shell, session, dialog } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { pathToFileURL } = require("url");
@@ -26,6 +26,29 @@ function servir(requete) {
 const estInterne = (u) => { try { return new URL(u).protocol === "app:"; } catch { return false; } };
 const ouvrirHorsApp = (u) => { if (/^(https?|mailto|tel):/i.test(u)) shell.openExternal(u); };
 
+const DEPOT = "yassingithu/nadir-shop";
+const plusRecent = (a, b) => { const x = a.split(".").map(Number), y = b.split(".").map(Number); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return false; };
+
+/** Vérifie s'il existe une version plus récente (publiée sur GitHub) et propose de la télécharger. */
+async function verifierMiseAJour(manuel) {
+  try {
+    const rep = await net.fetch(`https://api.github.com/repos/${DEPOT}/releases/latest`, { headers: { Accept: "application/vnd.github+json", "User-Agent": "nadir-shop-gestion" } });
+    if (!rep.ok) throw new Error("HTTP " + rep.status);
+    const r = await rep.json();
+    const v = String(r.tag_name || "").replace(/^app-v/, "");
+    if (!/^\d+\.\d+\.\d+$/.test(v) || !plusRecent(v, app.getVersion())) {
+      if (manuel) dialog.showMessageBox(fenetre, { type: "info", message: "Vous avez la dernière version.", detail: `Version ${app.getVersion()}`, buttons: ["OK"] });
+      return;
+    }
+    const cle = process.platform === "win32" ? "windows.exe" : process.arch === "arm64" ? "mac-arm64.dmg" : "mac-x64.dmg";
+    const fichier = (r.assets || []).find((a) => a.name.endsWith(cle));
+    const { response } = await dialog.showMessageBox(fenetre, { type: "info", message: `Une nouvelle version (${v}) est disponible.`, detail: "Cliquez sur « Télécharger », puis ouvrez le fichier pour installer : vos données ne sont pas touchées.", buttons: ["Télécharger", "Plus tard"], defaultId: 0, cancelId: 1 });
+    if (response === 0) shell.openExternal(fichier ? fichier.browser_download_url : r.html_url);
+  } catch (e) {
+    if (manuel) dialog.showMessageBox(fenetre, { type: "warning", message: "Impossible de vérifier les mises à jour.", detail: "Vérifiez la connexion Internet, puis réessayez.", buttons: ["OK"] });
+  }
+}
+
 function creerFenetre() {
   fenetre = new BrowserWindow({
     width: 1360, height: 900, minWidth: 960, minHeight: 640,
@@ -47,6 +70,7 @@ function construireMenu() {
   const modele = [
     ...(mac ? [{ role: "appMenu" }] : []),
     { role: "editMenu", label: "Édition" },
+    { label: "Aide", submenu: [{ label: "Rechercher une mise à jour…", click: () => void verifierMiseAJour(true) }] },
     { label: "Aller", submenu: [
       { label: "Administration", accelerator: "CmdOrCtrl+1", click: () => fenetre?.loadURL(ACCUEIL) },
       { label: "Voir la boutique", click: () => fenetre?.loadURL("app://nadir/") },
@@ -73,6 +97,7 @@ app.whenReady().then(() => {
   });
   construireMenu();
   creerFenetre();
+  setTimeout(() => void verifierMiseAJour(false), 6000);
   app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) creerFenetre(); });
 });
 app.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });
