@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useLangue } from "./i18n";
 import { usePanier } from "./panier";
 import Visuel from "./Visuel";
+import { comparerTailles } from "./tailles";
 import type { Produit } from "./types";
 
 export const remise = (p: Produit) => (p.prix_barre && p.prix_barre > p.prix ? Math.round((1 - p.prix / p.prix_barre) * 100) : 0);
@@ -28,7 +29,7 @@ export default function Carte({ p }: { p: Produit }) {
       {rapide && !epuise && (
         <div className="hidden md:block -mt-12 relative h-12 translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 transition bg-white/95 border-t trait">
           <div className="flex h-full items-center justify-center gap-1.5 px-2" role="group" aria-label={t("Ajout rapide")}>
-            {p.variantes.map((v) => (
+            {[...p.variantes].sort((a, b) => comparerTailles(a.valeurs[cle], b.valeurs[cle])).map((v) => (
               <button key={v.id} disabled={v.stock < 1} className="h-8 min-w-9 px-2 text-xs border trait hover:border-black disabled:opacity-30 disabled:line-through"
                 onClick={() => { ajouter({ variante_id: v.id, produit_id: p.id, quantite: 1 }); setOuvert(true); }} data-testid={`rapide-${v.valeurs[cle]}`}>{v.valeurs[cle]}</button>
             ))}

@@ -6,6 +6,7 @@ import { useDonnees } from "../lib/donnees";
 import { usePanier } from "../lib/panier";
 import Carte, { remise } from "../lib/Carte";
 import Visuel from "../lib/Visuel";
+import { comparerTailles } from "../lib/tailles";
 
 function Accordeon({ titre, children }: { titre: string; children: React.ReactNode }) {
   return <details className="border-t trait group"><summary className="flex items-center justify-between py-4 text-sm font-semibold cursor-pointer list-none">{titre}<ChevronDown className="h-4 w-4 transition group-open:rotate-180" /></summary><div className="pb-4 text-sm opacity-80 leading-relaxed">{children}</div></details>;
@@ -24,7 +25,7 @@ export default function ProduitPage() {
   const stock = variante?.stock ?? 0;
   const r = remise(p);
   const dispo = (cle: string, val: string) => p.variantes.some((v) => v.valeurs[cle] === val && v.stock > 0 && Object.entries(choix).every(([k, x]) => k === cle || v.valeurs[k] === x));
-  const valeurs = (cle: string) => [...new Set(p.variantes.map((v) => v.valeurs[cle]))];
+  const valeurs = (cle: string) => [...new Set(p.variantes.map((v) => v.valeurs[cle]))].sort(comparerTailles);
   const cat = categories.find((c) => c.slug === p.categorie);
   const similaires = produits.filter((x) => x.id !== p.id && x.categorie === p.categorie).concat(produits.filter((x) => x.id !== p.id && x.categorie !== p.categorie)).slice(0, 4);
   const ajoute = () => { if (variante) { ajouter({ variante_id: variante.id, produit_id: p.id, quantite: 1 }); setOuvert(true); } };

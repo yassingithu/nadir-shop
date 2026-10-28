@@ -12,6 +12,7 @@ import ProduitPage from "./pages/ProduitPage";
 import PanierPage from "./pages/PanierPage";
 import CommandePage from "./pages/CommandePage";
 import SuiviPage from "./pages/SuiviPage";
+import AdminApp from "./admin/AdminApp";
 
 const LANGUES: [Langue, string][] = [["fr", "FR"], ["en", "EN"], ["ar", "عربي"]];
 
@@ -100,6 +101,18 @@ export default function App() {
   return (
     <LangueProvider><DonneesProvider><PanierProvider>
       <BrowserRouter>
+        <Routes>
+          <Route path="/admin/*" element={<AdminApp />} />
+          <Route path="*" element={<Boutique_ />} />
+        </Routes>
+      </BrowserRouter>
+    </PanierProvider></DonneesProvider></LangueProvider>
+  );
+}
+
+function Boutique_() {
+  return (
+      <>
         <Annonce />
         <Entete />
         <Tiroir />
@@ -114,7 +127,6 @@ export default function App() {
           </Routes>
         </main>
         <Pied />
-      </BrowserRouter>
-    </PanierProvider></DonneesProvider></LangueProvider>
+      </>
   );
 }

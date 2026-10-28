@@ -18,3 +18,4 @@ body { overflow-x: clip; }
 .tiroir { transform: translateX(100%); visibility: hidden; transition: transform .3s, visibility 0s .3s; }
 [dir="rtl"] .tiroir { transform: translateX(-100%); }
 .tiroir.ouvert { transform: none; visibility: visible; transition: transform .3s; }
+@media print { .no-print { display: none !important; } body { background: #fff; } }

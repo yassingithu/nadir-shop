@@ -1,0 +1,125 @@
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { Trash2 } from "lucide-react";
+import { ok, sb, slugify, type Cat, type Prod, type Var } from "./db";
+import { comparerTailles } from "../lib/tailles";
+
+type Ligne = { id?: string; taille: string; stock: number; prix: string; actif: boolean; ancien?: number };
+const vide: Prod = { id: "", slug: "", categorie_id: null, nom: { fr: "", en: "", ar: "" }, description: { fr: "", en: "", ar: "" }, prix: 0, prix_barre: null, photos: [], options: [], actif: true };
+
+export default function ProduitEdit() {
+  const { id } = useParams(), nouveau = id === "nouveau", nav = useNavigate();
+  const [p, setP] = useState<Prod>({ ...vide, id: crypto.randomUUID() });
+  const [lignes, setLignes] = useState<Ligne[]>([]), [cats, setCats] = useState<Cat[]>([]);
+  const [tailles, setTailles] = useState(""), [msg, setMsg] = useState(""), [err, setErr] = useState(""), [envoi, setEnvoi] = useState(false), [prixTxt, setPrixTxt] = useState(""), [barreTxt, setBarreTxt] = useState("");
+  useEffect(() => {
+    (async () => {
+      try {
+        setCats(await ok<Cat[]>(sb().from("categories").select("*").order("ordre")));
+        if (!nouveau) {
+          const prod = await ok<Prod>(sb().from("produits").select("*").eq("id", id!).single());
+          const vs = await ok<Var[]>(sb().from("variantes").select("*").eq("produit_id", id!));
+          setP(prod); setPrixTxt(String(prod.prix)); setBarreTxt(prod.prix_barre == null ? "" : String(prod.prix_barre));
+          setLignes([...(vs ?? [])].sort((a, b) => comparerTailles(a.valeurs.taille ?? "", b.valeurs.taille ?? "")).map((v) => ({ id: v.id, taille: v.valeurs.taille ?? "Unique", stock: v.stock, prix: v.prix == null ? "" : String(v.prix), actif: v.actif, ancien: v.stock })));
+        }
+      } catch (e) { setErr((e as Error).message); }
+    })();
+  }, [id, nouveau]);
+
+  const maj = <K extends keyof Prod>(k: K, v: Prod[K]) => setP((x) => ({ ...x, [k]: v }));
+  const ajouterTailles = () => {
+    const nv = tailles.split(/[,;\n]/).map((t) => t.trim()).filter((t) => t && !lignes.some((l) => l.taille.toLowerCase() === t.toLowerCase()));
+    setLignes([...lignes, ...nv.map((t) => ({ taille: t, stock: 0, prix: "", actif: true }))]); setTailles("");
+  };
+  const num = (s: string) => Number(s.replace(",", "."));
+
+  const enregistrer = async (e: React.FormEvent) => {
+    e.preventDefault(); setErr(""); setMsg("");
+    const prix = num(prixTxt), barre = barreTxt.trim() === "" ? null : num(barreTxt);
+    if (!p.nom.fr.trim()) return setErr("Le nom en français est obligatoire.");
+    if (!Number.isFinite(prix) || prix < 0) return setErr("Le prix est invalide.");
+    if (barre != null && (!Number.isFinite(barre) || barre < 0)) return setErr("Le prix barré est invalide.");
+    if (lignes.length === 0) return setErr("Ajoutez au moins une taille (ou « Unique ») avec son stock.");
+    if (lignes.some((l) => !Number.isInteger(l.stock) || l.stock < 0)) return setErr("Un stock est invalide (nombre entier, 0 ou plus).");
+    setEnvoi(true);
+    try {
+      const avecTaille = lignes.some((l) => l.taille !== "Unique");
+      const donnees = { categorie_id: p.categorie_id, nom: p.nom, description: p.description, prix, prix_barre: barre, photos: p.photos, actif: p.actif, options: avecTaille ? [{ cle: "taille", nom: { fr: "Taille", en: "Size", ar: "المقاس" } }] : [] };
+      if (nouveau) await ok(sb().from("produits").insert({ id: p.id, slug: slugify(p.nom.fr) + "-" + p.id.slice(0, 4), ...donnees }));
+      else await ok(sb().from("produits").update(donnees).eq("id", p.id));
+      for (const l of lignes) {
+        const valeurs = l.taille === "Unique" ? {} : { taille: l.taille }, prixV = l.prix.trim() === "" ? null : num(l.prix);
+        if (l.id) {
+          await ok(sb().from("variantes").update({ valeurs, prix: prixV, stock: l.stock, actif: l.actif }).eq("id", l.id));
+          if (l.ancien != null && l.ancien !== l.stock) await ok(sb().from("mouvements_stock").insert({ variante_id: l.id, delta: l.stock - l.ancien, motif: "correction" }));
+        } else {
+          const nid = crypto.randomUUID();
+          await ok(sb().from("variantes").insert({ id: nid, produit_id: p.id, valeurs, prix: prixV, stock: l.stock, actif: l.actif }));
+          if (l.stock > 0) await ok(sb().from("mouvements_stock").insert({ variante_id: nid, delta: l.stock, motif: "reception" }));
+        }
+      }
+      setMsg("Produit enregistré."); if (nouveau) nav(`/admin/produits/${p.id}`, { replace: true });
+      else setLignes((ls) => ls.map((l) => ({ ...l, ancien: l.stock })));
+    } catch (er) { setErr((er as Error).message); }
+    setEnvoi(false);
+  };
+  const retirer = async (i: number) => {
+    const l = lignes[i];
+    if (l.id) { try { await ok(sb().from("variantes").delete().eq("id", l.id)); } catch (er) { return setErr((er as Error).message); } }
+    setLignes(lignes.filter((_, j) => j !== i));
+  };
+  const televerser = async (files: FileList | null) => {
+    if (!files?.length) return; setErr("");
+    try {
+      const urls: string[] = [];
+      for (const f of Array.from(files)) {
+        if (f.size > 5 * 1024 * 1024) { setErr("Une photo dépasse 5 Mo."); continue; }
+        const chemin = `${p.id}/${Date.now()}-${slugify(f.name.replace(/\.[^.]+$/, ""))}.${(f.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "")}`;
+        const { error } = await sb().storage.from("produits").upload(chemin, f, { contentType: f.type });
+        if (error) throw new Error(error.message);
+        urls.push(sb().storage.from("produits").getPublicUrl(chemin).data.publicUrl);
+      }
+      maj("photos", [...p.photos, ...urls]);
+    } catch (er) { setErr((er as Error).message); }
+  };
+  const supprimer = async () => {
+    if (!window.confirm("Supprimer définitivement ce produit ? Les commandes déjà passées sont conservées.")) return;
+    try { await ok(sb().from("produits").delete().eq("id", p.id)); nav("/admin/produits"); } catch (er) { setErr((er as Error).message); }
+  };
+  const nom = (k: "fr" | "en" | "ar", label: string, dir?: "rtl") => <label className="block text-sm"><span className="font-medium">{label}</span><input className="champ mt-1" dir={dir} value={p.nom[k] ?? ""} onChange={(e) => maj("nom", { ...p.nom, [k]: e.target.value })} data-testid={`nom-${k}`} /></label>;
+  const desc = (k: "fr" | "en" | "ar", label: string, dir?: "rtl") => <label className="block text-sm"><span className="font-medium">{label}</span><textarea className="champ mt-1 h-24 py-3" dir={dir} value={p.description[k] ?? ""} onChange={(e) => maj("description", { ...p.description, [k]: e.target.value })} /></label>;
+  return (
+    <form onSubmit={enregistrer} className="space-y-8">
+      <div className="flex items-center justify-between gap-3"><div><Link to="/admin/produits" className="text-sm underline">← Produits</Link><h1 className="text-2xl font-bold mt-1">{nouveau ? "Nouveau produit" : p.nom.fr || "Produit"}</h1></div>
+        <button className="btn-plein" disabled={envoi} data-testid="enregistrer">{envoi ? "Enregistrement…" : "Enregistrer"}</button></div>
+      {err && <p role="alert" className="text-sm" style={{ color: "var(--promo)" }} data-testid="erreur">{err}</p>}
+      {msg && <p className="text-sm" style={{ color: "var(--stock)" }} data-testid="message">{msg}</p>}
+      <section className="grid md:grid-cols-3 gap-4">{nom("fr", "Nom (français) *")}{nom("en", "Nom (anglais)")}{nom("ar", "Nom (arabe)", "rtl")}</section>
+      <section className="grid md:grid-cols-3 gap-4">{desc("fr", "Description (français)")}{desc("en", "Description (anglais)")}{desc("ar", "Description (arabe)", "rtl")}</section>
+      <section className="grid sm:grid-cols-4 gap-4">
+        <label className="block text-sm"><span className="font-medium">Prix (MAD) *</span><input className="champ mt-1" inputMode="decimal" value={prixTxt} onChange={(e) => setPrixTxt(e.target.value)} data-testid="prix" /></label>
+        <label className="block text-sm"><span className="font-medium">Ancien prix barré (facultatif)</span><input className="champ mt-1" inputMode="decimal" value={barreTxt} onChange={(e) => setBarreTxt(e.target.value)} data-testid="prix-barre" /></label>
+        <label className="block text-sm"><span className="font-medium">Catégorie</span><select className="champ mt-1" value={p.categorie_id ?? ""} onChange={(e) => maj("categorie_id", e.target.value || null)}><option value="">Aucune</option>{cats.map((c) => <option key={c.id} value={c.id}>{c.nom.fr}</option>)}</select></label>
+        <label className="flex items-end gap-2 text-sm pb-3"><input type="checkbox" checked={p.actif} onChange={(e) => maj("actif", e.target.checked)} />En vente sur la boutique</label>
+      </section>
+      <section>
+        <h2 className="font-bold mb-2">Tailles et stock</h2>
+        <div className="flex flex-wrap gap-2 mb-3"><input className="champ max-w-xs" placeholder="Ex. S, M, L, XL (ou Unique)" value={tailles} onChange={(e) => setTailles(e.target.value)} data-testid="tailles" /><button type="button" className="btn-ligne h-12" onClick={ajouterTailles} data-testid="ajouter-tailles">Ajouter</button></div>
+        {lignes.length > 0 && <table className="w-full text-sm border trait"><thead className="bg-[#f4f4f4]"><tr><th className="text-start p-2">Taille</th><th className="text-start p-2">Stock</th><th className="text-start p-2">Prix particulier</th><th className="p-2">Actif</th><th /></tr></thead>
+          <tbody>{lignes.map((l, i) => <tr key={l.id ?? l.taille} className="border-t trait" data-testid="ligne-taille">
+            <td className="p-2 font-medium">{l.taille}</td>
+            <td className="p-2"><input type="number" min={0} className="champ h-10 w-24" value={l.stock} onChange={(e) => setLignes(lignes.map((x, j) => j === i ? { ...x, stock: e.target.value === "" ? 0 : Math.trunc(Number(e.target.value)) } : x))} data-testid={`stock-${l.taille}`} /></td>
+            <td className="p-2"><input className="champ h-10 w-28" placeholder="= prix du produit" value={l.prix} onChange={(e) => setLignes(lignes.map((x, j) => j === i ? { ...x, prix: e.target.value } : x))} /></td>
+            <td className="p-2 text-center"><input type="checkbox" checked={l.actif} onChange={(e) => setLignes(lignes.map((x, j) => j === i ? { ...x, actif: e.target.checked } : x))} /></td>
+            <td className="p-2 text-end"><button type="button" onClick={() => void retirer(i)} aria-label={`Retirer ${l.taille}`}><Trash2 className="h-4 w-4 opacity-60 hover:opacity-100" /></button></td></tr>)}</tbody></table>}
+      </section>
+      <section>
+        <h2 className="font-bold mb-2">Photos</h2>
+        <div className="flex flex-wrap gap-3 mb-3">{p.photos.map((u, i) => <div key={u} className="relative"><img src={u} alt="" className="h-28 w-24 object-cover" /><button type="button" onClick={() => maj("photos", p.photos.filter((_, j) => j !== i))} className="absolute top-1 end-1 bg-white text-xs px-1.5 py-0.5 border trait" aria-label="Retirer la photo">✕</button></div>)}</div>
+        <input type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={(e) => void televerser(e.target.files)} data-testid="photos" />
+        <p className="text-xs opacity-60 mt-2">La première photo est celle de la liste. JPG, PNG ou WebP, 5 Mo maximum chacune. N'oubliez pas d'enregistrer.</p>
+      </section>
+      {!nouveau && <button type="button" className="text-sm underline" style={{ color: "var(--promo)" }} onClick={supprimer}>Supprimer ce produit</button>}
+    </form>
+  );
+}
