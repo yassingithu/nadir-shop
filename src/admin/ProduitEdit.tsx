@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Trash2 } from "lucide-react";
 import { ok, sb, slugify, type Cat, type Prod, type Var } from "./db";
-import { comparerTailles } from "../lib/tailles";
+import { comparerTailles, TAILLES_BEBE, TAILLES_ENFANT } from "../lib/tailles";
 import { completer, MESSAGE_ECHEC } from "./traduire";
 import Exemple, { type Vue } from "../lib/exemples";
 
@@ -134,7 +134,10 @@ export default function ProduitEdit() {
         <h2 className="font-bold mb-1">Tailles et stock</h2>
         <p className="text-sm opacity-70 mb-3">1. Cliquez sur chaque taille que vous vendez. &nbsp;2. Indiquez combien de pièces vous avez dans chaque taille (utilisez + et −). <br />Pas de tailles (chaussures, accessoire…) ? Cliquez sur « Taille unique » ou écrivez la vôtre (ex. 40, 42).</p>
         <div className="flex flex-wrap gap-2 mb-3" data-testid="choix-tailles">{["XS", "S", "M", "L", "XL", "XXL", "3XL", "Unique"].map((t) => { const deja = lignes.some((l) => l.taille.toLowerCase() === t.toLowerCase()); return <button key={t} type="button" disabled={deja} onClick={() => setLignes([...lignes, { taille: t, stock: 1, prix: "", actif: true }])} data-testid={`choisir-${t}`} className={`h-10 min-w-12 px-3 border trait text-sm ${deja ? "bg-[var(--marque)] text-white" : "hover:bg-[var(--ciel)]"}`}>{deja ? "✓ " : "+ "}{t === "Unique" ? "Taille unique" : t}</button>; })}</div>
-        <div className="flex flex-wrap gap-2 mb-4"><input className="champ max-w-xs" placeholder="Autre taille, ex. 40, 42 ou 2XL" value={tailles} onChange={(e) => setTailles(e.target.value)} data-testid="tailles" /><button type="button" className="btn-ligne h-12" onClick={ajouterTailles} data-testid="ajouter-tailles">Ajouter</button></div>
+        {([["Tailles bébé", TAILLES_BEBE, "bebe"], ["Tailles enfant", TAILLES_ENFANT, "enfant"]] as const).map(([titre, liste, id]) => (
+          <div key={id} className="mb-3"><p className="text-xs font-semibold opacity-70 mb-1">{titre}</p>
+            <div className="flex flex-wrap gap-2" data-testid={`choix-tailles-${id}`}>{liste.map((t) => { const deja = lignes.some((l) => l.taille.toLowerCase() === t.toLowerCase()); return <button key={t} type="button" disabled={deja} onClick={() => setLignes([...lignes, { taille: t, stock: 1, prix: "", actif: true }])} data-testid={`choisir-${t}`} className={`h-10 px-3 border trait text-sm ${deja ? "bg-[var(--marque)] text-white" : "hover:bg-[var(--ciel)]"}`}>{deja ? "✓ " : "+ "}{t}</button>; })}</div></div>))}
+        <div className="flex flex-wrap gap-2 mb-4"><input className="champ max-w-xs" placeholder="Autre taille, ex. 40, 42, 2XL ou 5 ans" value={tailles} onChange={(e) => setTailles(e.target.value)} data-testid="tailles" /><button type="button" className="btn-ligne h-12" onClick={ajouterTailles} data-testid="ajouter-tailles">Ajouter</button></div>
         {lignes.length > 0 && <>
           <div className="border trait divide-y divide-[#e5e5e5]">{lignes.map((l, i) => { const fixer = (n: number) => setLignes(lignes.map((x, j) => j === i ? { ...x, stock: Math.max(0, Math.trunc(n)) } : x)); return (
             <div key={l.id ?? l.taille} className="flex flex-wrap items-center gap-3 p-3" data-testid="ligne-taille">

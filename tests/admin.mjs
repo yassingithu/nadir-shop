@@ -95,11 +95,12 @@ if (process.argv[1].endsWith("admin.mjs")) {
   await p.click('[data-testid="enregistrer"]'); ok("nom obligatoire", await p.getByText("nom en français est obligatoire").isVisible());
   await p.fill('[data-testid="nom-fr"]', "Robe d'été"); await p.fill('[data-testid="nom-ar"]', "فستان صيفي"); await p.waitForFunction(() => document.querySelector('[data-testid="nom-en"]').value.startsWith("[en]")); ok("traduction automatique : anglais rempli, arabe déjà écrit conservé", (await p.inputValue('[data-testid="nom-en"]')) === "[en] Robe d'été" && (await p.inputValue('[data-testid="nom-ar"]')) === "فستان صيفي"); await p.fill('[data-testid="prix"]', "199,50"); await p.fill('[data-testid="prix-barre"]', "249");
   await p.fill('[data-testid="tailles"]', "XL, S, M"); await p.click('[data-testid="ajouter-tailles"]');
+  await p.click('[data-testid="choisir-8 ans"]'); await p.click('[data-testid="choisir-6 mois"]'); ok("tailles enfant/bébé ajoutables en un clic", (await p.inputValue('[data-testid="stock-8 ans"]')) === "1" && (await p.inputValue('[data-testid="stock-6 mois"]')) === "1"); await p.fill('[data-testid="stock-8 ans"]', "0"); await p.fill('[data-testid="stock-6 mois"]', "0");
   await p.fill('[data-testid="stock-S"]', "4"); await p.fill('[data-testid="stock-M"]', "6");
   await p.click('[data-testid="enregistrer"]'); await p.waitForSelector('[data-testid="message"]');
   const robe = T.produits.find((x) => x.nom.fr === "Robe d'été");
   ok("produit créé avec prix décimal 199,5 et prix barré 249", robe && robe.prix === 199.5 && robe.prix_barre === 249);
-  ok("3 tailles créées, stock S=4 M=6 XL=0", T.variantes.filter((v) => v.produit_id === robe.id).length === 3 && T.variantes.find((v) => v.produit_id === robe.id && v.valeurs.taille === "M").stock === 6);
+  ok("5 tailles créées, stock S=4 M=6 XL=0", T.variantes.filter((v) => v.produit_id === robe.id).length === 5 && T.variantes.find((v) => v.produit_id === robe.id && v.valeurs.taille === "M").stock === 6);
   ok("mouvements de stock « réception » enregistrés (S et M)", T.mouvements_stock.filter((x) => x.motif === "reception").length === 2);
   ok("options taille créées", robe.options[0]?.cle === "taille");
   await p.waitForTimeout(1200); await p.fill('[data-testid="stock-S"]', "7"); await p.click('[data-testid="enregistrer"]'); await p.waitForTimeout(1000);
@@ -108,7 +109,7 @@ if (process.argv[1].endsWith("admin.mjs")) {
 
   await p.goto(BASE + "/admin/produits"); await p.waitForSelector('[data-testid="ligne-produit"]');
   const dl = p.waitForEvent("download"); await p.click('[data-testid="exporter"]'); const d = await dl; await d.saveAs("/tmp/claude-0/ns/export.csv");
-  const csv = readFileSync("/tmp/claude-0/ns/export.csv", "utf8"); ok("export : en-tête + 5 lignes de tailles", csv.split("\r\n").length === 6 && csv.includes("Robe d'été"));
+  const csv = readFileSync("/tmp/claude-0/ns/export.csv", "utf8"); ok("export : en-tête + 7 lignes de tailles", csv.split("\r\n").length === 8 && csv.includes("Robe d'été"));
   writeFileSync("/tmp/claude-0/ns/import.csv", "slug;nom_fr;nom_en;nom_ar;categorie;prix;prix_barre;taille;stock;actif\nrobe-import;Robe import;;;hauts;310,5;;M;3;oui\nrobe-import;Robe import;;;hauts;310,5;;L;5;oui\n");
   await p.setInputFiles('[data-testid="import-fichier"]', "/tmp/claude-0/ns/import.csv"); await p.waitForSelector('[data-testid="info-import"]');
   ok("import : produit créé avec 2 tailles et catégorie liée", T.produits.find((x) => x.slug === "robe-import")?.categorie_id === "c1" && T.variantes.filter((v) => v.produit_id === T.produits.find((x) => x.slug === "robe-import").id).length === 2);

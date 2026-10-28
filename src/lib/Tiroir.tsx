@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Minus, Plus, X } from "lucide-react";
 import { useLangue } from "./i18n";
+import { libelleTaille } from "./tailles";
 import { useDonnees } from "./donnees";
 import { usePanier } from "./panier";
 import { detail } from "./calcul";
@@ -8,7 +9,7 @@ import Visuel from "./Visuel";
 
 /** Mini-panier qui s'ouvre sur le côté, avec la barre de progression vers la livraison offerte. */
 export default function Tiroir() {
-  const { t, tr, prix } = useLangue();
+  const { t, tr, prix, langue } = useLangue();
   const { produits, reglages } = useDonnees();
   const { lignes, changer, retirer, ouvert, setOuvert } = usePanier();
   const d = detail(lignes, produits, reglages);
@@ -33,7 +34,7 @@ export default function Tiroir() {
               <li key={l.variante_id} className="flex gap-4 py-4">
                 <Visuel p={p} className="h-28 w-20 shrink-0" />
                 <div className="flex-1 min-w-0 text-sm">
-                  <div className="font-medium">{tr(p.nom)}</div><div className="opacity-60">{Object.values(v.valeurs).join(" · ")}</div>
+                  <div className="font-medium">{tr(p.nom)}</div><div className="opacity-60">{Object.values(v.valeurs).map((x) => libelleTaille(x, langue)).join(" · ")}</div>
                   <div className="mt-3 flex items-center gap-3">
                     <div className="flex items-center border trait">
                       <button className="h-8 w-8 grid place-items-center" onClick={() => changer(l.variante_id, l.quantite - 1)} aria-label="−"><Minus className="h-3.5 w-3.5" /></button>

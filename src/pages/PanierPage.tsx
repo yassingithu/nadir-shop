@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { useLangue } from "../lib/i18n";
+import { libelleTaille } from "../lib/tailles";
 import { useSeo } from "../lib/Seo";
 import { useDonnees } from "../lib/donnees";
 import { usePanier } from "../lib/panier";
@@ -8,7 +9,7 @@ import { detail } from "../lib/calcul";
 import Visuel from "../lib/Visuel";
 
 export default function PanierPage() {
-  const { t, tr, prix } = useLangue();
+  const { t, tr, prix, langue } = useLangue();
   useSeo({ titre: t("Panier") + " | Sweet Family", noindex: true });
   const { produits, reglages } = useDonnees();
   const { lignes, changer, retirer } = usePanier();
@@ -24,7 +25,7 @@ export default function PanierPage() {
             <Visuel p={p} className="h-24 w-20 shrink-0" />
             <div className="flex-1 min-w-0">
               <div className="font-medium">{tr(p.nom)}</div>
-              <div className="text-sm opacity-60">{Object.values(v.valeurs).join(" · ")}</div>
+              <div className="text-sm opacity-60">{Object.values(v.valeurs).map((x) => libelleTaille(x, langue)).join(" · ")}</div>
               <div className="mt-3 flex items-center gap-3">
                 <div className="flex items-center border trait" aria-label={t("Quantité")}>
                   <button className="h-9 w-9 grid place-items-center" onClick={() => changer(l.variante_id, l.quantite - 1)} aria-label="−"><Minus className="h-4 w-4" /></button>

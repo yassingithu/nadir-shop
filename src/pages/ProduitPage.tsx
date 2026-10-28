@@ -7,7 +7,7 @@ import { useDonnees } from "../lib/donnees";
 import { usePanier } from "../lib/panier";
 import Carte, { remise } from "../lib/Carte";
 import Visuel from "../lib/Visuel";
-import { comparerTailles } from "../lib/tailles";
+import { comparerTailles, libelleTaille } from "../lib/tailles";
 import AvisProduit from "../lib/AvisProduit";
 import { lienWhatsApp } from "../lib/WhatsApp";
 import type { Avis } from "../lib/api";
@@ -21,7 +21,7 @@ function Accordeon({ titre, children }: { titre: string; children: React.ReactNo
 
 export default function ProduitPage() {
   const { slug } = useParams();
-  const { t, tr, prix } = useLangue();
+  const { t, tr, prix, langue } = useLangue();
   const { produits, categories } = useDonnees();
   const { ajouter, setOuvert } = usePanier();
   const p = produits.find((x) => x.slug === slug);
@@ -65,12 +65,12 @@ export default function ProduitPage() {
           </p>
           {p.options.map((o) => (
             <div key={o.cle} className="mt-7">
-              <div className="text-sm font-semibold mb-2">{tr(o.nom)}{choix[o.cle] && <span className="font-normal opacity-60"> : {choix[o.cle]}</span>}</div>
+              <div className="text-sm font-semibold mb-2">{tr(o.nom)}{choix[o.cle] && <span className="font-normal opacity-60"> : {libelleTaille(choix[o.cle], langue)}</span>}</div>
               <div className="grid grid-cols-4 gap-2">
                 {valeurs(o.cle).map((val) => {
                   const ok = dispo(o.cle, val), on = choix[o.cle] === val;
                   return <button key={val} disabled={!ok} onClick={() => setChoix({ ...choix, [o.cle]: val })} aria-pressed={on} data-testid={`option-${o.cle}-${val}`}
-                    className={`h-12 border text-sm disabled:opacity-30 disabled:line-through ${on ? "text-white bg-[var(--marque)] border-black" : "trait hover:border-black"}`}>{val}</button>;
+                    className={`h-12 border text-sm disabled:opacity-30 disabled:line-through ${on ? "text-white bg-[var(--marque)] border-black" : "trait hover:border-black"}`}>{libelleTaille(val, langue)}</button>;
                 })}
               </div>
             </div>
