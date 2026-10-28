@@ -1,7 +1,7 @@
 /** Photos d'exemple dessinées (aucune vraie photo) : elles montrent les angles à prendre et servent de visuels de démonstration. */
 export type Vue = "face" | "dos" | "detail" | "etiquette" | "porte" | "plat" | "ensemble" | "gros-plan" | "echelle" | "emballage";
 
-const FOND = "#f1f1f1";
+const FOND = "#e6f2f4";
 const TSHIRT = "M35 12 22 20 8 38l12 8 8-7v49h44V39l8 7 12-8-14-18-13-8c-2 7-8 11-15 11s-13-4-15-11Z";
 const TSHIRT_DOS = "M35 12 22 20 8 38l12 8 8-7v49h44V39l8 7 12-8-14-18-13-8c-3 3-8 4-15 4s-12-1-15-4Z";
 

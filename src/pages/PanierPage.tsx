@@ -38,7 +38,7 @@ export default function PanierPage() {
           </li>
         ))}
       </ul>
-      <aside className="rounded-2xl bg-[#f4f4f4] p-6 h-fit space-y-3">
+      <aside className="rounded-2xl bg-[var(--gris)] p-6 h-fit space-y-3">
         <Ligne a={t("Sous-total")} b={prix(d.sous)} />
         <Ligne a={t("Livraison")} b={d.frais === 0 ? t("Gratuite") : prix(d.frais)} />
         <div className="border-t pt-3 trait"><Ligne a={t("Total")} b={prix(d.total)} fort /></div>

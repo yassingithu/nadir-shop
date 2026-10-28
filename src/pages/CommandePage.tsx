@@ -67,7 +67,7 @@ export default function CommandePage() {
           {radio("virement", t("Virement bancaire"), t("La commande est préparée dès réception du virement."))}
         </div>
       </div>
-      <aside className="rounded-2xl bg-[#f4f4f4] p-6 h-fit space-y-3 text-sm">
+      <aside className="rounded-2xl bg-[var(--gris)] p-6 h-fit space-y-3 text-sm">
         <div className="flex justify-between"><span>{t("Sous-total")}</span><span>{prix(d.sous)}</span></div>
         <div className="flex justify-between"><span>{t("Livraison")}</span><span>{d.frais === 0 ? t("Gratuite") : prix(d.frais)}</span></div>
         <div className="flex justify-between font-semibold text-lg border-t pt-3 trait"><span>{t("Total")}</span><span>{prix(d.total)}</span></div>

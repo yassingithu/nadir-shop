@@ -64,7 +64,7 @@ export default function ProduitPage() {
                 {valeurs(o.cle).map((val) => {
                   const ok = dispo(o.cle, val), on = choix[o.cle] === val;
                   return <button key={val} disabled={!ok} onClick={() => setChoix({ ...choix, [o.cle]: val })} aria-pressed={on} data-testid={`option-${o.cle}-${val}`}
-                    className={`h-12 border text-sm disabled:opacity-30 disabled:line-through ${on ? "bg-black text-white border-black" : "trait hover:border-black"}`}>{val}</button>;
+                    className={`h-12 border text-sm disabled:opacity-30 disabled:line-through ${on ? "text-white bg-[var(--marque)] border-black" : "trait hover:border-black"}`}>{val}</button>;
                 })}
               </div>
             </div>

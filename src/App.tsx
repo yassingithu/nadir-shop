@@ -72,7 +72,7 @@ function Entete() {
           </div>
           <button onClick={() => setOuvert(true)} className="relative grid place-items-center h-10 w-10" aria-label={t("Panier")} data-testid="panier-lien">
             <ShoppingBag className="h-5 w-5" />
-            {nombre > 0 && <span className="absolute top-0.5 end-0 h-4 min-w-4 px-1 rounded-full text-[10px] text-white grid place-items-center bg-black" data-testid="panier-nombre">{nombre}</span>}
+            {nombre > 0 && <span className="absolute top-0.5 end-0 h-4 min-w-4 px-1 rounded-full text-[10px] text-white grid place-items-center bg-[var(--marque)]" data-testid="panier-nombre">{nombre}</span>}
           </button>
         </div>
       </div>
@@ -97,7 +97,7 @@ function Pied() {
   const { reglages, categories } = useDonnees();
   const col = "space-y-2.5 text-sm";
   return (
-    <footer className="mt-24 bg-[#f4f4f4]">
+    <footer className="mt-24 bg-[var(--gris)]">
       <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
         <div className="col-span-2 md:col-span-1"><p className="flex items-center gap-3 text-lg font-bold tracking-[0.18em] uppercase"><img src="/logo.png" alt="" className="h-10 w-auto" />{reglages.nom_boutique}</p><p className="mt-3 text-sm opacity-70 max-w-xs">{t("Commande sécurisée : vous ne payez qu'à la livraison ou après votre virement.")}</p></div>
         <ul className={col}><li className="font-semibold">{t("Boutique")}</li>{categories.map((c) => <li key={c.slug}><Link className="hover:underline" to={`/boutique?cat=${c.slug}`}>{tr(c.nom)}</Link></li>)}<li><Link className="hover:underline" to="/boutique?promo=1">{t("Promotions")}</Link></li></ul>

@@ -37,7 +37,7 @@ export default function Boutique() {
         </aside>
         <div>
           <div className="md:hidden flex gap-2 overflow-x-auto pb-4 -mt-2">
-            {[null, ...categories.map((c) => c.slug)].map((s) => <button key={s ?? "tout"} onClick={() => maj("cat", s)} className={`shrink-0 h-9 px-4 border text-sm ${cat === s ? "bg-black text-white border-black" : "trait"}`}>{s ? tr(categories.find((c) => c.slug === s)?.nom) : t("Tout")}</button>)}
+            {[null, ...categories.map((c) => c.slug)].map((s) => <button key={s ?? "tout"} onClick={() => maj("cat", s)} className={`shrink-0 h-9 px-4 border text-sm ${cat === s ? "bg-[var(--marque)] text-white border-black" : "trait"}`}>{s ? tr(categories.find((c) => c.slug === s)?.nom) : t("Tout")}</button>)}
           </div>
           {etat === "ok" && liste.length === 0 && <p className="opacity-60">{q ? t("Aucun résultat pour « {q} »", { q }) : t("Aucun produit pour le moment.")}</p>}
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-3 gap-y-8">{liste.map((p) => <Carte key={p.id} p={p} />)}</div>

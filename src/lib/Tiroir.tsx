@@ -26,7 +26,7 @@ export default function Tiroir() {
           {seuil != null && (
             <div className="px-5 py-4 border-b trait text-sm">
               <p>{reste > 0 ? t("Il vous manque {montant} pour la livraison offerte", { montant: prix(reste) }) : t("Livraison offerte !")}</p>
-              <div className="mt-2 h-1 bg-[#e3e3e3]"><div className="h-full transition-all" style={{ width: `${Math.min(100, (d.sous / seuil) * 100)}%`, background: reste > 0 ? "var(--encre)" : "var(--stock)" }} /></div>
+              <div className="mt-2 h-1 bg-[var(--trait)]"><div className="h-full transition-all" style={{ width: `${Math.min(100, (d.sous / seuil) * 100)}%`, background: reste > 0 ? "var(--encre)" : "var(--stock)" }} /></div>
             </div>)}
           <ul className="flex-1 overflow-y-auto px-5 divide-y trait">
             {d.items.map(({ l, p, v, prix: pu }) => (

@@ -80,7 +80,7 @@ export default function Produits() {
       <input className="champ mb-4 max-w-sm" placeholder="Rechercher un produit" value={q} onChange={(e) => setQ(e.target.value)} />
       {liste.length === 0 ? <p className="opacity-60 text-sm">Aucun produit. Ajoutez-en un, ou importez un fichier Excel (<button className="underline" onClick={modele}>télécharger le modèle</button>).</p> : (
         <table className="w-full text-sm border trait">
-          <thead className="bg-[#f4f4f4] text-start"><tr><th className="text-start p-3">Produit</th><th className="text-start p-3">Prix</th><th className="text-start p-3">Stock</th><th className="text-start p-3">Statut</th></tr></thead>
+          <thead className="bg-[var(--gris)] text-start"><tr><th className="text-start p-3">Produit</th><th className="text-start p-3">Prix</th><th className="text-start p-3">Stock</th><th className="text-start p-3">Statut</th></tr></thead>
           <tbody>{liste.map((p) => {
             const vs = vars.filter((v) => v.produit_id === p.id), stock = vs.reduce((s, v) => s + v.stock, 0);
             return <tr key={p.id} className="border-t trait hover:bg-[#fafafa]" data-testid="ligne-produit">

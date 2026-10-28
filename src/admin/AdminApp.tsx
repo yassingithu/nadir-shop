@@ -18,7 +18,7 @@ function Connexion({ erreur }: { erreur?: string }) {
     if (error) setMsg("E-mail ou mot de passe incorrect."); setEnvoi(false);
   };
   return (
-    <div className="min-h-screen grid place-items-center px-4 bg-[#f4f4f4]">
+    <div className="min-h-screen grid place-items-center px-4 bg-[var(--gris)]">
       <form onSubmit={valider} className="w-full max-w-sm bg-white p-8 space-y-4 border trait" data-testid="connexion">
         <h1 className="text-2xl font-bold">Administration</h1>
         <label className="block text-sm"><span className="font-medium">E-mail</span><input className="champ mt-1" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} data-testid="admin-email" /></label>
@@ -35,7 +35,7 @@ export default function AdminApp() {
   // Rend l'administration « installable » sur téléphone et ordinateur (icône sur l'écran d'accueil), sans toucher à la boutique.
   useEffect(() => {
     const liens = [["manifest", "/gestion.webmanifest"], ["apple-touch-icon", "/icone-180.png"]].map(([rel, href]) => { const l = document.createElement("link"); l.rel = rel; l.href = href; document.head.appendChild(l); return l; });
-    const m = document.createElement("meta"); m.name = "theme-color"; m.content = "#1f6b7a"; document.head.appendChild(m);
+    const m = document.createElement("meta"); m.name = "theme-color"; m.content = "#286b7b"; document.head.appendChild(m);
     const ro = document.createElement("meta"); ro.name = "robots"; ro.content = "noindex, nofollow"; document.head.appendChild(ro);
     const titre = document.title; document.title = "Sweet Family Gestion";
     return () => { [...liens, m, ro].forEach((x) => x.remove()); document.title = titre; };
@@ -60,11 +60,11 @@ export default function AdminApp() {
 }
 
 function Coque() {
-  const lien = ({ isActive }: { isActive: boolean }) => `flex items-center gap-3 px-4 h-11 text-sm ${isActive ? "bg-black text-white font-semibold" : "hover:bg-[#ececec]"}`;
+  const lien = ({ isActive }: { isActive: boolean }) => `flex items-center gap-3 px-4 h-11 text-sm ${isActive ? "bg-[var(--marque)] text-white font-semibold" : "hover:bg-[var(--ciel)]"}`;
   const item = (to: string, icone: ReactNode, nom: string, end = false) => <NavLink to={to} end={end} className={lien}>{icone}{nom}</NavLink>;
   return (
     <div className="min-h-screen md:grid md:grid-cols-[230px_1fr]">
-      <aside className="bg-[#f4f4f4] border-e trait md:min-h-screen no-print">
+      <aside className="bg-[var(--gris)] border-e trait md:min-h-screen no-print">
         <div className="px-4 h-16 flex items-center gap-3 font-bold tracking-[0.12em] uppercase text-sm"><img src="/logo.png" alt="" className="h-9 w-auto" />Sweet Family</div>
         <nav className="flex md:block overflow-x-auto" aria-label="Administration">
           {item("/admin", <LayoutDashboard className="h-4 w-4" />, "Tableau de bord", true)}
