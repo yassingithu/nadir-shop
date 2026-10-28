@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ok, sb, slugify, type Cat, type Reg } from "./db";
 import { TEXTES_SITE, type Surcharges } from "../lib/i18n";
+import { Campagnes } from "./Marketing";
 import { completer, traduire, MESSAGE_ECHEC } from "./traduire";
 
 export function Categories() {
@@ -67,7 +68,17 @@ export function Reglages() {
       <h2 className="font-bold pt-2">Virement bancaire (affiché au client)</h2>
       {champ("virement_titulaire", "Titulaire du compte")}{champ("virement_banque", "Banque")}{champ("virement_rib", "RIB")}
       <h2 className="font-bold pt-2">Contact</h2>
-      <div className="grid sm:grid-cols-2 gap-4">{champ("telephone", "Téléphone")}{champ("whatsapp", "WhatsApp", "Avec l'indicatif, ex. 212612345678")}</div>
+      <p className="text-xs opacity-60 -mt-2">Ces informations s'affichent en bas du site, et le bouton WhatsApp ouvre une discussion avec ce numéro.</p>
+      <div className="grid sm:grid-cols-2 gap-4">{champ("telephone", "Téléphone")}{champ("whatsapp", "WhatsApp", "Avec l'indicatif, sans + ni espaces : 212677859227")}</div>
+      {champ("email_contact", "E-mail de contact")}
+      {champ("adresse", "Adresse (facultatif)")}{champ("horaires", "Horaires (facultatif)", "Ex. Lun–Sam 10h–19h")}
+      <h2 className="font-bold pt-2">Réseaux sociaux</h2>
+      <p className="text-xs opacity-60 -mt-2">Collez l'adresse complète de la page (https://…). Laissez vide pour ne pas l'afficher.</p>
+      {champ("instagram", "Instagram")}{champ("facebook", "Facebook")}{champ("tiktok", "TikTok")}
+      <h2 className="font-bold pt-2">Newsletter</h2>
+      {champ("newsletter_expediteur", "Expéditeur des e-mails", "Ex. Sweet Family <contact@swtfamily.com> (l'adresse doit être sur votre domaine vérifié)")}
+      <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!r.bienvenue_actif} onChange={(e) => setR({ ...r, bienvenue_actif: e.target.checked })} data-testid="reg-bienvenue_actif" />Envoyer automatiquement un e-mail de bienvenue aux nouveaux abonnés</label>
+      {r.bienvenue_actif && <>{champ("bienvenue_sujet", "Sujet de l'e-mail de bienvenue")}<label className="block text-sm"><span className="font-medium">Message de bienvenue</span><textarea className="champ mt-1 !h-32 py-3" value={r.bienvenue_texte ?? ""} onChange={(e) => setR({ ...r, bienvenue_texte: e.target.value })} /></label></>}
       <button className="btn-plein" data-testid="reg-enregistrer">Enregistrer</button>
     </form>
   );
@@ -137,6 +148,7 @@ export function Newsletter() {
         <tbody>{vue.map((a) => <tr key={a.id} className="border-t trait" data-testid="abonne"><td className="p-2" dir="ltr">{a.email}</td><td className="p-2 uppercase">{a.langue}</td><td className="p-2">{a.created_at.slice(0, 10)}</td><td className="p-2">{a.actif ? "Abonné" : "Désinscrit"}</td>
           <td className="p-2 text-end whitespace-nowrap"><button className="underline me-3" onClick={() => void changer(a, !a.actif)}>{a.actif ? "Désinscrire" : "Réactiver"}</button><button className="underline" style={{ color: "var(--promo)" }} onClick={() => void retirer(a)}>Supprimer</button></td></tr>)}
           {vue.length === 0 && <tr><td className="p-4 opacity-60" colSpan={5}>Aucun abonné pour le moment.</td></tr>}</tbody></table>
+      <Campagnes />
     </div>
   );
 }

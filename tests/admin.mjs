@@ -4,12 +4,12 @@ import { chromium } from "/opt/npm-tools/node_modules/playwright/index.mjs";
 import { readFileSync, writeFileSync } from "node:fs";
 
 const BASE = "http://127.0.0.1:5192", UID = "00000000-0000-0000-0000-0000000000aa";
-const T = { equipe: [{ user_id: UID }], reglages: [{ id: 1, nom_boutique: "Nadir Shop", devise: "MAD", frais_livraison: 30, livraison_gratuite_des: 500, virement_titulaire: "", virement_banque: "", virement_rib: "", telephone: "", whatsapp: "", seuil_stock_bas: 3, textes: {} }],
+const T = { equipe: [{ user_id: UID }], reglages: [{ id: 1, nom_boutique: "Nadir Shop", devise: "MAD", frais_livraison: 30, livraison_gratuite_des: 500, virement_titulaire: "", virement_banque: "", virement_rib: "", telephone: "", whatsapp: "212677859227", email_contact: "contact@swtfamily.com", instagram: "", facebook: "", tiktok: "", adresse: "", horaires: "", newsletter_expediteur: "Sweet Family <contact@swtfamily.com>", bienvenue_actif: false, bienvenue_sujet: "Bienvenue", bienvenue_texte: "Merci", seuil_stock_bas: 3, textes: {} }],
   categories: [{ id: "c1", slug: "hauts", nom: { fr: "Hauts", en: "Tops", ar: "قمصان" }, ordre: 1, actif: true }],
   produits: [{ id: "p1", slug: "tshirt", categorie_id: "c1", nom: { fr: "T-shirt", en: "T-shirt", ar: "" }, description: {}, prix: 120, prix_barre: null, photos: [], options: [{ cle: "taille", nom: { fr: "Taille" } }], actif: true, created_at: "2026-10-01" }],
   variantes: [{ id: "v1", produit_id: "p1", valeurs: { taille: "M" }, prix: null, stock: 2, actif: true }, { id: "v2", produit_id: "p1", valeurs: { taille: "S" }, prix: null, stock: 10, actif: true }],
   commandes: [{ id: "o1", numero: 1001, nom: "Ali", telephone: "0612345678", email: null, ville: "Rabat", adresse: "rue 1", note: null, mode_paiement: "virement", statut: "recue", paiement_recu: false, sous_total: 240, frais_livraison: 30, total: 270, created_at: new Date().toISOString() }],
-  lignes_commande: [{ id: "l1", commande_id: "o1", variante_id: "v1", nom: "T-shirt", valeurs: { taille: "M" }, prix_unitaire: 120, quantite: 2 }], mouvements_stock: [], abonnes_newsletter: [] };
+  lignes_commande: [{ id: "l1", commande_id: "o1", variante_id: "v1", nom: "T-shirt", valeurs: { taille: "M" }, prix_unitaire: 120, quantite: 2 }], mouvements_stock: [], abonnes_newsletter: [], codes_promo: [], avis: [], campagnes: [], visites: [] };
 const env = { rpc: [], meta: {} };
 export { T, env };
 
@@ -56,15 +56,20 @@ export async function monter(page) {
       const nom = u.pathname.split("/rpc/")[1], b = JSON.parse(req.postData() || "{}"); env.rpc.push([nom, b]);
       if (nom === "annuler_commande") { for (const l of T.lignes_commande.filter((x) => x.commande_id === b.p_id)) T.variantes.find((v) => v.id === l.variante_id).stock += l.quantite; T.commandes.find((c) => c.id === b.p_id).statut = "annulee"; }
       if (nom === "passer_commande") return rep(200, { numero: 1002, total: 120, mode_paiement: b.p.mode_paiement });
+      if (nom === "verifier_code_promo") { const c = T.codes_promo.find((x) => x.code === b.p_code && x.actif !== false); if (!c) return rep(200, { valide: false, message: "Code promo invalide." }); return rep(200, { valide: true, code: c.code, type: c.type, remise: c.type === "pourcentage" ? 12 : 0, frais: c.type === "livraison" ? 0 : 30 }); }
+      if (nom === "stats_visites") return rep(200, { jours: [{ jour: "2026-10-27", vues: 5, visiteurs: 3 }, { jour: "2026-10-28", vues: 9, visiteurs: 4 }], total_vues: 14, total_visiteurs: 7, aujourdhui_vues: 9, aujourdhui_visiteurs: 4, pages: [{ chemin: "/", vues: 8, visiteurs: 5 }], sources: [{ source: "Direct", visiteurs: 5 }, { source: "instagram.com", visiteurs: 2 }], langues: [{ langue: "fr", visiteurs: 6 }], commandes: 1, chiffre: 270 });
+      if (nom === "peut_donner_avis") return rep(200, { connecte: true, a_achete: !T.avis.some((a) => a.produit_id === b.p_produit && a.user_id === UID) && env.achete !== false, deja: T.avis.some((a) => a.produit_id === b.p_produit && a.user_id === UID) });
+      if (nom === "laisser_avis") { T.avis.push({ id: "av" + T.avis.length, produit_id: b.p_produit, user_id: UID, nom_affiche: b.p_nom, note: b.p_note, titre: b.p_titre, texte: b.p_texte, statut: "attente", reponse: null, created_at: new Date().toISOString() }); return rep(200, null); }
       if (nom === "abonner_newsletter") { T.abonnes_newsletter.push({ id: "a" + T.abonnes_newsletter.length, email: b.p_email.toLowerCase(), langue: b.p_langue, actif: true, token: "tok" + T.abonnes_newsletter.length, source: b.p_source, created_at: new Date().toISOString() }); return rep(200, null); }
       return rep(200, null);
     }
+    if (u.pathname.includes("/functions/v1/newsletter")) { const b = JSON.parse(req.postData() || "{}"); env.fn = (env.fn || []).concat([b]); if (b.action === "envoyer") { const c = T.campagnes.find((x) => x.id === b.id); Object.assign(c, { statut: "envoyee", nb_envoyes: 2, envoyee_le: new Date().toISOString() }); return rep(200, { envoyes: 2, erreurs: 0 }); } return rep(200, { ok: true }); }
     const t = u.pathname.split("/rest/v1/")[1], rows = T[t]; if (!rows) return rep(404, { message: "table inconnue " + t });
     const unique = (req.headers()["accept"] || "").includes("vnd.pgrst.object");
     const prefer = req.headers()["prefer"] || "";
-    if (m === "GET" || m === "HEAD") { let r = filtrer(rows, u.searchParams); if (t === "produits" && (u.searchParams.get("select") || "").includes("variantes(")) r = r.map((x) => ({ ...x, variantes: T.variantes.filter((v) => v.produit_id === x.id), categorie: T.categories.find((c) => c.id === x.categorie_id) ?? null })); const lim = u.searchParams.get("limit"); if (lim) r = r.slice(0, Number(lim));
+    if (m === "GET" || m === "HEAD") { let r = filtrer(rows, u.searchParams); if (t === "produits" && (u.searchParams.get("select") || "").includes("variantes(")) r = r.map((x) => ({ ...x, variantes: T.variantes.filter((v) => v.produit_id === x.id), categorie: T.categories.find((c) => c.id === x.categorie_id) ?? null })); const lim = u.searchParams.get("limit"); if (t === "avis") r = r.map((x) => ({ ...x, produits: { nom: T.produits.find((q) => q.id === x.produit_id)?.nom, slug: T.produits.find((q) => q.id === x.produit_id)?.slug } })); if (lim) r = r.slice(0, Number(lim));
       if (unique) return r.length ? rep(200, r[0]) : rep(406, { code: "PGRST116", message: "JSON object requested, multiple (or no) rows returned" }); return rep(200, r); }
-    if (m === "POST") { const b = JSON.parse(req.postData() || "{}"), arr = Array.isArray(b) ? b : [b]; for (const x of arr) rows.push({ created_at: new Date().toISOString(), ...x }); return rep(201, prefer.includes("return=representation") ? arr : undefined); }
+    if (m === "POST") { const b = JSON.parse(req.postData() || "{}"), arr = Array.isArray(b) ? b : [b]; const ajoutes = arr.map((x) => { const l = { created_at: new Date().toISOString(), ...x }; if (!l.id && ["campagnes", "codes_promo", "avis"].includes(t)) l.id = t + (rows.length + 1); rows.push(l); return l; }); return rep(201, prefer.includes("return=representation") ? (unique ? ajoutes[0] : ajoutes) : undefined); }
     if (m === "PATCH") { const b = JSON.parse(req.postData() || "{}"), r = filtrer(rows, u.searchParams); r.forEach((x) => Object.assign(x, b)); return rep(200, prefer.includes("return=representation") ? r : undefined); }
     if (m === "DELETE") { const r = filtrer(rows, u.searchParams); r.forEach((x) => rows.splice(rows.indexOf(x), 1)); return rep(204); }
     return rep(405, {});

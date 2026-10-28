@@ -49,7 +49,7 @@ export default function Commandes() {
                   <div><p className="font-semibold">Client</p><p>{c.nom}</p><p dir="ltr">{c.telephone}</p>{c.email && <p>{c.email}</p>}<p>{c.adresse}, {c.ville}</p>{c.note && <p className="italic">« {c.note} »</p>}</div>
                   <div><p className="font-semibold">Articles</p>
                     <ul>{(lignes[c.id] ?? []).map((l) => <li key={l.id} className="flex justify-between gap-3"><span>{l.quantite} × {l.nom} {Object.values(l.valeurs).join(" ")}</span><span>{mad(l.prix_unitaire * l.quantite)}</span></li>)}</ul>
-                    <p className="flex justify-between mt-2 opacity-70"><span>Livraison</span><span>{mad(c.frais_livraison)}</span></p><p className="flex justify-between font-bold"><span>Total à encaisser</span><span>{mad(c.total)}</span></p></div>
+                    {(c.remise ?? 0) > 0 && <p className="flex justify-between mt-2 opacity-70"><span>Code {c.code_promo}</span><span>- {mad(c.remise!)}</span></p>}<p className="flex justify-between mt-2 opacity-70"><span>Livraison</span><span>{mad(c.frais_livraison)}</span></p><p className="flex justify-between font-bold"><span>Total à encaisser</span><span>{mad(c.total)}</span></p></div>
                 </div>
                 <div className="flex flex-wrap items-center gap-3 no-print">
                   <label className="flex items-center gap-2">Statut <select className="champ h-10 w-40" value={c.statut} disabled={c.statut === "annulee"} onChange={(e) => void modifier(c, { statut: e.target.value })} data-testid="changer-statut">{STATUTS.filter(([k]) => k !== "annulee").map(([k, v]) => <option key={k} value={k}>{v}</option>)}{c.statut === "annulee" && <option value="annulee">Annulée</option>}</select></label>

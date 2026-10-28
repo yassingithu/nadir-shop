@@ -5,7 +5,7 @@ import { useLangue } from "../lib/i18n";
 import { useSeo } from "../lib/Seo";
 import { useDonnees } from "../lib/donnees";
 import { usePanier } from "../lib/panier";
-import { passerCommande } from "../lib/api";
+import { passerCommande, verifierCode } from "../lib/api";
 import { detail } from "../lib/calcul";
 import type { Infos } from "../lib/types";
 
@@ -22,6 +22,19 @@ export default function CommandePage() {
   const [fait, setFait] = useState<{ numero: number; mode: string } | null>(null);
   const [prerempli, setPrerempli] = useState(false);
   if (user && !prerempli) { setPrerempli(true); setF((o) => ({ ...o, ...user.profil, email: user.email, note: o.note })); }
+  const [codeSaisi, setCodeSaisi] = useState("");
+  const [promo, setPromo] = useState<{ code: string; remise: number; frais: number } | null>(null);
+  const [erreurCode, setErreurCode] = useState("");
+  const appliquer = async () => {
+    setErreurCode("");
+    try {
+      const r = await verifierCode(codeSaisi, lignes, d.sous, d.frais);
+      if (r.valide && r.code) setPromo({ code: r.code, remise: r.remise ?? 0, frais: r.frais ?? d.frais });
+      else setErreurCode(r.message || t("Code promo invalide."));
+    } catch { setErreurCode(t("Code promo invalide.")); }
+  };
+  const remiseAff = promo?.remise ?? 0, fraisAff = promo ? promo.frais : d.frais;
+  const totalAff = Math.max(d.sous - remiseAff, 0) + fraisAff;
   const valide = f.nom.trim() && f.telephone.replace(/\D/g, "").length >= 9 && f.ville.trim() && f.adresse.trim();
   const champ = (cle: keyof Infos, label: string, extra: Record<string, string> = {}) => (
     <label className="block text-sm"><span className="mb-1 block font-medium">{label}</span>
@@ -57,7 +70,7 @@ export default function CommandePage() {
   const envoyer = async (e: React.FormEvent) => {
     e.preventDefault(); if (!valide || etat === "envoi") return;
     setEtat("envoi");
-    try { const r = await passerCommande(f, mode, lignes, langue); vider(); setFait({ numero: r.numero, mode }); }
+    try { const r = await passerCommande(f, mode, lignes, langue, promo?.code ?? ""); vider(); setFait({ numero: r.numero, mode }); }
     catch { setEtat("erreur"); }
   };
   const radio = (id: "livraison" | "virement", titre: string, desc: string) => (
@@ -81,8 +94,17 @@ export default function CommandePage() {
       </div>
       <aside className="rounded-2xl bg-[var(--gris)] p-6 h-fit space-y-3 text-sm">
         <div className="flex justify-between"><span>{t("Sous-total")}</span><span>{prix(d.sous)}</span></div>
-        <div className="flex justify-between"><span>{t("Livraison")}</span><span>{d.frais === 0 ? t("Gratuite") : prix(d.frais)}</span></div>
-        <div className="flex justify-between font-semibold text-lg border-t pt-3 trait"><span>{t("Total")}</span><span>{prix(d.total)}</span></div>
+        {promo ? (
+          <div className="flex items-center justify-between gap-2" data-testid="promo-appliquee"><span>{t("Code appliqué")} : <b dir="ltr">{promo.code}</b></span>
+            <button type="button" className="underline text-xs" onClick={() => { setPromo(null); setCodeSaisi(""); }}>{t("Retirer")}</button></div>
+        ) : (
+          <div><div className="flex gap-2"><input className="champ !h-10" dir="ltr" placeholder={t("Code promo")} aria-label={t("Code promo")} value={codeSaisi} onChange={(e) => setCodeSaisi(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (codeSaisi.trim()) void appliquer(); } }} data-testid="champ-promo" />
+            <button type="button" className="btn-ligne px-4 !h-10" disabled={!codeSaisi.trim()} onClick={appliquer} data-testid="appliquer-promo">{t("Appliquer")}</button></div>
+            {erreurCode && <p className="text-red-700 mt-1" role="alert" data-testid="erreur-promo">{erreurCode}</p>}</div>
+        )}
+        {remiseAff > 0 && <div className="flex justify-between" style={{ color: "var(--stock)" }}><span>{t("Réduction")}</span><span data-testid="remise">- {prix(remiseAff)}</span></div>}
+        <div className="flex justify-between"><span>{t("Livraison")}</span><span>{fraisAff === 0 ? t("Gratuite") : prix(fraisAff)}</span></div>
+        <div className="flex justify-between font-semibold text-lg border-t pt-3 trait"><span>{t("Total")}</span><span data-testid="total">{prix(totalAff)}</span></div>
         <button className="btn-plein w-full" disabled={!valide || etat === "envoi"} data-testid="confirmer">{etat === "envoi" ? t("Envoi…") : t("Confirmer la commande")}</button>
         {etat === "erreur" && <p className="text-red-700" role="alert">{t("Une erreur est survenue. Réessayez.")}</p>}
       </aside>

@@ -1,11 +1,12 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, Route, Routes } from "react-router-dom";
 import { supabase, modeDemo } from "../lib/api";
-import { LayoutDashboard, Package, ShoppingCart, Tags, Settings, LogOut, Mail, Type } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Tags, Settings, LogOut, Mail, Type, TicketPercent, Star, BarChart3 } from "lucide-react";
 import Tableau from "./Tableau";
 import Produits from "./Produits";
 import ProduitEdit from "./ProduitEdit";
 import Commandes from "./Commandes";
+import { AvisAdmin, CodesPromo, Statistiques } from "./Marketing";
 import { Categories, Newsletter, Reglages, TextesSite } from "./Divers";
 
 type Etat = "chargement" | "deconnecte" | "refuse" | "ok";
@@ -70,6 +71,9 @@ function Coque() {
           {item("/admin", <LayoutDashboard className="h-4 w-4" />, "Tableau de bord", true)}
           {item("/admin/produits", <Package className="h-4 w-4" />, "Produits")}
           {item("/admin/commandes", <ShoppingCart className="h-4 w-4" />, "Commandes")}
+          {item("/admin/statistiques", <BarChart3 className="h-4 w-4" />, "Statistiques")}
+          {item("/admin/promos", <TicketPercent className="h-4 w-4" />, "Codes promo")}
+          {item("/admin/avis", <Star className="h-4 w-4" />, "Avis")}
           {item("/admin/categories", <Tags className="h-4 w-4" />, "Catégories")}
           {item("/admin/reglages", <Settings className="h-4 w-4" />, "Réglages")}
           {item("/admin/newsletter", <Mail className="h-4 w-4" />, "Newsletter")}
@@ -88,6 +92,9 @@ function Coque() {
           <Route path="commandes" element={<Commandes />} />
           <Route path="categories" element={<Categories />} />
           <Route path="reglages" element={<Reglages />} />
+          <Route path="statistiques" element={<Statistiques />} />
+          <Route path="promos" element={<CodesPromo />} />
+          <Route path="avis" element={<AvisAdmin />} />
           <Route path="textes" element={<TextesSite />} />
           <Route path="newsletter" element={<Newsletter />} />
         </Routes>

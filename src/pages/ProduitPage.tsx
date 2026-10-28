@@ -8,6 +8,10 @@ import { usePanier } from "../lib/panier";
 import Carte, { remise } from "../lib/Carte";
 import Visuel from "../lib/Visuel";
 import { comparerTailles } from "../lib/tailles";
+import AvisProduit from "../lib/AvisProduit";
+import { lienWhatsApp } from "../lib/WhatsApp";
+import type { Avis } from "../lib/api";
+import { moyenne } from "../lib/Etoiles";
 
 const VUES = ["face", "dos", "detail", "porte"] as const;
 
@@ -24,12 +28,14 @@ export default function ProduitPage() {
   const [choix, setChoix] = useState<Record<string, string>>({});
   const [photo, setPhoto] = useState(0);
   const { reglages } = useDonnees();
+  const [avis, setAvis] = useState<Avis[]>([]);
   const photoSeo = p && (p as { photos?: string[] }).photos?.[0];
   const enStock = !!p && p.variantes.some((v) => v.stock > 0);
   useSeo({
     titre: p ? `${tr(p.nom)} – ${prix(p.prix)} | ${reglages.nom_boutique}` : reglages.nom_boutique,
     description: p ? (tr(p.description) || `${tr(p.nom)} – ${reglages.nom_boutique}`) : undefined, image: photoSeo, type: "product",
     donnees: p ? { "@context": "https://schema.org", "@type": "Product", name: tr(p.nom), description: tr(p.description) || undefined, image: photoSeo ? [photoSeo] : undefined, brand: { "@type": "Brand", name: reglages.nom_boutique },
+      ...(avis.length ? { aggregateRating: { "@type": "AggregateRating", ratingValue: Number(moyenne(avis).toFixed(1)), reviewCount: avis.length } } : {}),
       offers: { "@type": "Offer", price: p.prix, priceCurrency: "MAD", availability: enStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock", url: typeof location !== "undefined" ? location.href : undefined } } : undefined,
   });
   if (!p) return <p className="opacity-60">…</p>;
@@ -76,9 +82,11 @@ export default function ProduitPage() {
             <Accordeon titre={t("Livraison et retours")}>{t("Livraison partout au Maroc. Frais indiqués au moment de la commande.")}</Accordeon>
             <Accordeon titre={t("Paiement")}>{t("En espèces à la livraison, ou par virement bancaire.")}</Accordeon>
             <div className="border-t trait" />
+            {reglages.whatsapp && <a href={lienWhatsApp(reglages.whatsapp, t("Bonjour, j'ai une question sur : ") + tr(p.nom))} target="_blank" rel="noreferrer" className="mt-4 inline-block text-sm underline" data-testid="whatsapp-produit">{t("Une question sur ce produit ?")} {t("Discuter sur WhatsApp")}</a>}
           </div>
         </div>
       </div>
+      <AvisProduit produitId={p.id} onChargé={setAvis} />
       <section className="mt-16"><h2 className="text-xl font-bold mb-5">{t("Vous aimerez aussi")}</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-x-3 gap-y-8">{similaires.map((x) => <Carte key={x.id} p={x} />)}</div></section>
       <div className="md:hidden fixed bottom-0 inset-x-0 z-20 bg-white border-t trait p-3 flex items-center gap-3">

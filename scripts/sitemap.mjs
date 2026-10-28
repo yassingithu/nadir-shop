@@ -7,7 +7,7 @@ const env = {};
 if (existsSync(".env.production")) for (const l of readFileSync(".env.production", "utf8").split("\n")) { const m = /^(\w+)=(.*)$/.exec(l.trim()); if (m) env[m[1]] = m[2]; }
 const URL_DB = process.env.VITE_SUPABASE_URL || env.VITE_SUPABASE_URL, CLE = process.env.VITE_SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY;
 
-const urls = [["/", "1.0"], ["/boutique", "0.9"]];
+const urls = [["/", "1.0"], ["/boutique", "0.9"], ["/avis", "0.5"]];
 try {
   if (URL_DB && CLE) {
     const get = async (t, q) => { const r = await fetch(`${URL_DB}/rest/v1/${t}?${q}`, { headers: { apikey: CLE, Authorization: `Bearer ${CLE}` }, signal: AbortSignal.timeout(15000) }); if (!r.ok) throw new Error(t + " " + r.status); return r.json(); };

@@ -4,6 +4,9 @@ import { Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { LangueProvider, useLangue, type Langue } from "./lib/i18n";
 import { PanierProvider, usePanier } from "./lib/panier";
 import { DonneesProvider, useDonnees } from "./lib/donnees";
+import BoutonWhatsApp, { lienWhatsApp } from "./lib/WhatsApp";
+import AvisPage from "./pages/AvisPage";
+import { enregistrerVisite } from "./lib/api";
 import { ComptesProvider, useCompte } from "./lib/compte";
 import { abonnerNewsletter } from "./lib/api";
 import { modeDemo } from "./lib/api";
@@ -18,7 +21,6 @@ import ComptePage from "./pages/ComptePage";
 import DesabonnementPage from "./pages/DesabonnementPage";
 import AdminApp from "./admin/AdminApp";
 
-const EMAIL_CONTACT = "contact@swtfamily.com";
 const LANGUES: [Langue, string][] = [["fr", "FR"], ["en", "EN"], ["ar", "عربي"]];
 
 /** Dans l'application de bureau : barre pour revenir à l'administration quand on regarde la boutique. */
@@ -131,8 +133,13 @@ function Pied() {
         <div className="col-span-2 md:col-span-1"><p className="flex items-center gap-3 text-lg font-bold tracking-[0.18em] uppercase"><img src="/logo.png" alt="" className="h-10 w-auto" />{reglages.nom_boutique}</p><p className="mt-3 text-sm opacity-70 max-w-xs">{t("Commande sécurisée : vous ne payez qu'à la livraison ou après votre virement.")}</p></div>
         <ul className={col}><li className="font-semibold">{t("Boutique")}</li>{categories.map((c) => <li key={c.slug}><Link className="hover:underline" to={`/boutique?cat=${c.slug}`}>{tr(c.nom)}</Link></li>)}<li><Link className="hover:underline" to="/boutique?promo=1">{t("Promotions")}</Link></li></ul>
         <ul className={col}><li className="font-semibold">{t("Aide")}</li><li><Link className="hover:underline" to="/compte">{t("Mon compte")}</Link></li><li><Link className="hover:underline" to="/suivi">{t("Suivre ma commande")}</Link></li>
-          <li><a className="hover:underline" href={`mailto:${EMAIL_CONTACT}`} data-testid="email-contact" dir="ltr">{EMAIL_CONTACT}</a></li>
-          {reglages.whatsapp && <li><a className="hover:underline" href={`https://wa.me/${reglages.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">WhatsApp</a></li>}</ul>
+          <li><Link className="hover:underline" to="/avis" data-testid="lien-avis">{t("Avis")}</Link></li>
+          {reglages.email_contact && <li><a className="hover:underline" href={`mailto:${reglages.email_contact}`} data-testid="email-contact" dir="ltr">{reglages.email_contact}</a></li>}
+          {reglages.whatsapp && <li><a className="hover:underline" href={lienWhatsApp(reglages.whatsapp)} target="_blank" rel="noreferrer" dir="ltr" data-testid="whatsapp-pied">WhatsApp {reglages.whatsapp.length > 6 ? "+" + reglages.whatsapp.replace(/\D/g, "") : ""}</a></li>}
+          {reglages.telephone && <li dir="ltr" className="text-start">{reglages.telephone}</li>}
+          {reglages.adresse && <li>{reglages.adresse}</li>}
+          {reglages.horaires && <li className="opacity-70">{t("Horaires")} : {reglages.horaires}</li>}
+          {(reglages.instagram || reglages.facebook || reglages.tiktok) && <li className="flex gap-3 pt-1">{[["Instagram", reglages.instagram], ["Facebook", reglages.facebook], ["TikTok", reglages.tiktok]].filter(([, u]) => u).map(([n, u]) => <a key={n} className="hover:underline" href={u as string} target="_blank" rel="noreferrer me" data-testid={`social-${(n as string).toLowerCase()}`}>{n}</a>)}</li>}</ul>
         <ul className={col}><li className="font-semibold">{t("Modes de paiement")}</li><li>{t("Paiement à la livraison")}</li><li>{t("Virement bancaire")}</li></ul>
       </div>
       <div className="border-t trait py-5 text-center text-xs opacity-60">© {new Date().getFullYear()} {reglages.nom_boutique}<Link to="/admin" rel="nofollow" className="ms-4 opacity-50 hover:opacity-100 hover:underline" data-testid="lien-admin">Admin</Link></div>
@@ -153,6 +160,14 @@ export default function App() {
   );
 }
 
+/** Compte les visites (sans cookie) à chaque changement de page de la boutique. */
+function SuiviVisites() {
+  const loc = useLocation();
+  const { langue } = useLangue();
+  useEffect(() => { void enregistrerVisite(loc.pathname, langue); }, [loc.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+  return null;
+}
+
 function Boutique_() {
   return (
       <>
@@ -168,10 +183,13 @@ function Boutique_() {
             <Route path="/commande" element={<CommandePage />} />
             <Route path="/suivi" element={<SuiviPage />} />
             <Route path="/compte" element={<ComptePage />} />
+            <Route path="/avis" element={<AvisPage />} />
             <Route path="/newsletter/desabonnement" element={<DesabonnementPage />} />
           </Routes>
         </main>
         <Pied />
+        <BoutonWhatsApp />
+        <SuiviVisites />
       </>
   );
 }
