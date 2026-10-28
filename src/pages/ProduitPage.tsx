@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import { useLangue } from "../lib/i18n";
+import { useSeo } from "../lib/Seo";
 import { useDonnees } from "../lib/donnees";
 import { usePanier } from "../lib/panier";
 import Carte, { remise } from "../lib/Carte";
@@ -22,6 +23,15 @@ export default function ProduitPage() {
   const p = produits.find((x) => x.slug === slug);
   const [choix, setChoix] = useState<Record<string, string>>({});
   const [photo, setPhoto] = useState(0);
+  const { reglages } = useDonnees();
+  const photoSeo = p && (p as { photos?: string[] }).photos?.[0];
+  const enStock = !!p && p.variantes.some((v) => v.stock > 0);
+  useSeo({
+    titre: p ? `${tr(p.nom)} – ${prix(p.prix)} | ${reglages.nom_boutique}` : reglages.nom_boutique,
+    description: p ? (tr(p.description) || `${tr(p.nom)} – ${reglages.nom_boutique}`) : undefined, image: photoSeo, type: "product",
+    donnees: p ? { "@context": "https://schema.org", "@type": "Product", name: tr(p.nom), description: tr(p.description) || undefined, image: photoSeo ? [photoSeo] : undefined, brand: { "@type": "Brand", name: reglages.nom_boutique },
+      offers: { "@type": "Offer", price: p.prix, priceCurrency: "MAD", availability: enStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock", url: typeof location !== "undefined" ? location.href : undefined } } : undefined,
+  });
   if (!p) return <p className="opacity-60">…</p>;
   const complet = p.options.every((o) => choix[o.cle]);
   const variante = complet ? p.variantes.find((v) => p.options.every((o) => v.valeurs[o.cle] === choix[o.cle])) : undefined;

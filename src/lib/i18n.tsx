@@ -4,6 +4,8 @@ export type Langue = "fr" | "en" | "ar";
 export type Tr = { fr: string; en?: string; ar?: string };
 
 const TEXTES: Record<string, { en: string; ar: string }> = {
+  "Livraison à Tanger et partout au Maroc. Paiement à la livraison ou par virement.": { en: "Delivery in Tangier and all over Morocco. Pay on delivery or by bank transfer.", ar: "التوصيل إلى طنجة وجميع أنحاء المغرب. الدفع عند الاستلام أو عبر التحويل البنكي." },
+  "Tous nos articles": { en: "All our items", ar: "جميع منتجاتنا" },
   "Boutique": { en: "Shop", ar: "المتجر" },
   "Tout": { en: "All", ar: "الكل" },
   "Panier": { en: "Cart", ar: "السلة" },

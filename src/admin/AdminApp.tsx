@@ -36,8 +36,9 @@ export default function AdminApp() {
   useEffect(() => {
     const liens = [["manifest", "/gestion.webmanifest"], ["apple-touch-icon", "/icone-180.png"]].map(([rel, href]) => { const l = document.createElement("link"); l.rel = rel; l.href = href; document.head.appendChild(l); return l; });
     const m = document.createElement("meta"); m.name = "theme-color"; m.content = "#111111"; document.head.appendChild(m);
+    const ro = document.createElement("meta"); ro.name = "robots"; ro.content = "noindex, nofollow"; document.head.appendChild(ro);
     const titre = document.title; document.title = "Nadir Shop Gestion";
-    return () => { [...liens, m].forEach((x) => x.remove()); document.title = titre; };
+    return () => { [...liens, m, ro].forEach((x) => x.remove()); document.title = titre; };
   }, []);
   useEffect(() => {
     if (!supabase) return;

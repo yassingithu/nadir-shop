@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { useLangue } from "../lib/i18n";
+import { useSeo } from "../lib/Seo";
 import { useDonnees } from "../lib/donnees";
 import { usePanier } from "../lib/panier";
 import { detail } from "../lib/calcul";
@@ -8,6 +9,7 @@ import Visuel from "../lib/Visuel";
 
 export default function PanierPage() {
   const { t, tr, prix } = useLangue();
+  useSeo({ titre: t("Panier") + " | Nadir Shop", noindex: true });
   const { produits, reglages } = useDonnees();
   const { lignes, changer, retirer } = usePanier();
   const d = detail(lignes, produits, reglages);

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useLangue } from "../lib/i18n";
+import { useSeo } from "../lib/Seo";
 import { useDonnees } from "../lib/donnees";
 import { usePanier } from "../lib/panier";
 import { passerCommande } from "../lib/api";
@@ -9,6 +10,7 @@ import type { Infos } from "../lib/types";
 
 export default function CommandePage() {
   const { t, prix, langue } = useLangue();
+  useSeo({ titre: t("Vos informations") + " | Nadir Shop", noindex: true });
   const { produits, reglages } = useDonnees();
   const { lignes, vider } = usePanier();
   const d = detail(lignes, produits, reglages);

@@ -2,11 +2,15 @@ import { useSearchParams } from "react-router-dom";
 import { useLangue } from "../lib/i18n";
 import { useDonnees } from "../lib/donnees";
 import Carte, { remise } from "../lib/Carte";
+import { useSeo } from "../lib/Seo";
 
 export default function Boutique() {
   const { t, tr } = useLangue();
   const { produits, categories, etat } = useDonnees();
   const [sp, setSp] = useSearchParams();
+  const { reglages: rg } = useDonnees();
+  const catSeo = categories.find((c) => c.slug === sp.get("cat"));
+  useSeo({ titre: `${catSeo ? tr(catSeo.nom) : t("Tous nos articles")} | ${rg.nom_boutique}`, description: t("Livraison à Tanger et partout au Maroc. Paiement à la livraison ou par virement."), noindex: !!(sp.get("q") || sp.get("tri") || sp.get("promo")) });
   const cat = sp.get("cat"), promo = sp.get("promo") === "1", q = (sp.get("q") || "").toLowerCase(), tri = sp.get("tri") || "";
   const maj = (k: string, v: string | null) => { const n = new URLSearchParams(sp); if (v) n.set(k, v); else n.delete(k); if (k === "cat") { n.delete("nouveautes"); } setSp(n); };
   let liste = produits.filter((p) => (!cat || p.categorie === cat) && (!promo || remise(p) > 0) && (!q || [p.nom.fr, p.nom.en, p.nom.ar].some((x) => x?.toLowerCase().includes(q))));
