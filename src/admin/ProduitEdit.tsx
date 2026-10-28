@@ -3,6 +3,20 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { Trash2 } from "lucide-react";
 import { ok, sb, slugify, type Cat, type Prod, type Var } from "./db";
 import { comparerTailles } from "../lib/tailles";
+import Exemple, { type Vue } from "../lib/exemples";
+
+const GUIDE: { vue: Vue; titre: string; conseil: string }[] = [
+  { vue: "face", titre: "1. De face", conseil: "Article à plat ou sur cintre, bien droit, fond uni clair. C'est la photo de la liste." },
+  { vue: "dos", titre: "2. De dos", conseil: "Même cadrage et même lumière que la face." },
+  { vue: "detail", titre: "3. Détail", conseil: "Gros plan sur la matière, la couture ou la finition." },
+  { vue: "etiquette", titre: "4. Étiquette", conseil: "Taille, composition, marque : le client veut la voir." },
+  { vue: "porte", titre: "5. Porté", conseil: "Sur une personne ou un mannequin, pour montrer la coupe." },
+  { vue: "plat", titre: "6. Plusieurs coloris", conseil: "Les couleurs disponibles côte à côte." },
+  { vue: "ensemble", titre: "Autre article : de face", conseil: "Matériel, accessoire, appareil : tout l'objet visible, fond uni." },
+  { vue: "gros-plan", titre: "Autre article : détail", conseil: "Bouton, prise, finition : ce qui prouve la qualité." },
+  { vue: "echelle", titre: "Autre article : taille", conseil: "Objet tenu en main ou à côté d'une règle, pour comprendre sa taille." },
+  { vue: "emballage", titre: "Autre article : emballage", conseil: "Le carton ou la boîte tel que le client le recevra." },
+];
 
 type Ligne = { id?: string; taille: string; stock: number; prix: string; actif: boolean; ancien?: number };
 const vide: Prod = { id: "", slug: "", categorie_id: null, nom: { fr: "", en: "", ar: "" }, description: { fr: "", en: "", ar: "" }, prix: 0, prix_barre: null, photos: [], options: [], actif: true };
@@ -118,6 +132,10 @@ export default function ProduitEdit() {
         <div className="flex flex-wrap gap-3 mb-3">{p.photos.map((u, i) => <div key={u} className="relative"><img src={u} alt="" className="h-28 w-24 object-cover" /><button type="button" onClick={() => maj("photos", p.photos.filter((_, j) => j !== i))} className="absolute top-1 end-1 bg-white text-xs px-1.5 py-0.5 border trait" aria-label="Retirer la photo">✕</button></div>)}</div>
         <input type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={(e) => void televerser(e.target.files)} data-testid="photos" />
         <p className="text-xs opacity-60 mt-2">La première photo est celle de la liste. JPG, PNG ou WebP, 5 Mo maximum chacune. N'oubliez pas d'enregistrer.</p>
+        <details className="mt-4 border trait p-3" data-testid="guide-photo"><summary className="cursor-pointer font-semibold text-sm">Quelles photos prendre ? (exemples dessinés)</summary>
+          <p className="text-xs opacity-70 my-2">Lumière du jour près d'une fenêtre, fond uni clair, photo verticale, appareil bien droit. Ce sont des dessins d'exemple, pas de vraies photos.</p>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">{GUIDE.map((g) => <figure key={g.vue}><Exemple vue={g.vue} className="aspect-[3/4] w-full" /><figcaption className="text-xs mt-1"><b>{g.titre}</b><br />{g.conseil}</figcaption></figure>)}</div>
+        </details>
       </section>
       {!nouveau && <button type="button" className="text-sm underline" style={{ color: "var(--promo)" }} onClick={supprimer}>Supprimer ce produit</button>}
     </form>

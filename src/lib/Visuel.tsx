@@ -1,10 +1,7 @@
 import type { Produit } from "./types";
-/** Image du produit : la première photo si elle existe, sinon un visuel de remplacement sur fond gris. */
-export default function Visuel({ p, className = "" }: { p: Produit & { photos?: string[] }; className?: string }) {
-  if (p.photos?.[0]) return <img src={p.photos[0]} alt="" loading="lazy" className={`object-cover ${className}`} />;
-  return (
-    <div className={`grid place-items-center ${className}`} style={{ background: "#f1f1f1" }} aria-hidden>
-      <svg viewBox="0 0 100 100" className="w-[46%]" fill={p.couleur}><path d="M35 12 22 20 8 38l12 8 8-7v49h44V39l8 7 12-8-14-18-13-8c-2 7-8 11-15 11s-13-4-15-11Z" /></svg>
-    </div>
-  );
+import Exemple, { type Vue } from "./exemples";
+/** Image du produit : la photo numéro `n` si elle existe, sinon une photo d'exemple dessinée (vue au choix). */
+export default function Visuel({ p, className = "", n = 0, vue = "face" }: { p: Produit & { photos?: string[] }; className?: string; n?: number; vue?: Vue }) {
+  if (p.photos?.[n]) return <img src={p.photos[n]} alt="" loading="lazy" className={`object-cover ${className}`} />;
+  return <Exemple vue={vue} couleur={p.couleur} className={className} />;
 }

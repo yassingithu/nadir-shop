@@ -8,6 +8,8 @@ import Carte, { remise } from "../lib/Carte";
 import Visuel from "../lib/Visuel";
 import { comparerTailles } from "../lib/tailles";
 
+const VUES = ["face", "dos", "detail", "porte"] as const;
+
 function Accordeon({ titre, children }: { titre: string; children: React.ReactNode }) {
   return <details className="border-t trait group"><summary className="flex items-center justify-between py-4 text-sm font-semibold cursor-pointer list-none">{titre}<ChevronDown className="h-4 w-4 transition group-open:rotate-180" /></summary><div className="pb-4 text-sm opacity-80 leading-relaxed">{children}</div></details>;
 }
@@ -19,6 +21,7 @@ export default function ProduitPage() {
   const { ajouter, setOuvert } = usePanier();
   const p = produits.find((x) => x.slug === slug);
   const [choix, setChoix] = useState<Record<string, string>>({});
+  const [photo, setPhoto] = useState(0);
   if (!p) return <p className="opacity-60">…</p>;
   const complet = p.options.every((o) => choix[o.cle]);
   const variante = complet ? p.variantes.find((v) => p.options.every((o) => v.valeurs[o.cle] === choix[o.cle])) : undefined;
@@ -35,8 +38,8 @@ export default function ProduitPage() {
       <nav className="text-xs opacity-60 mb-5 flex gap-1.5" aria-label="Fil d'Ariane"><Link to="/" className="hover:underline">{t("Accueil")}</Link>/{cat && <><Link to={`/boutique?cat=${cat.slug}`} className="hover:underline">{tr(cat.nom)}</Link>/</>}<span className="opacity-100">{tr(p.nom)}</span></nav>
       <div className="grid md:grid-cols-[1.2fr_1fr] gap-8 lg:gap-14">
         <div className="grid grid-cols-[64px_1fr] gap-3">
-          <div className="space-y-3" aria-hidden>{[0, 1, 2].map((i) => <Visuel key={i} p={p} className={`aspect-[3/4] w-full ${i === 0 ? "ring-1 ring-black" : "opacity-70"}`} />)}</div>
-          <Visuel p={p} className="aspect-[3/4] w-full" />
+          <div className="space-y-3" role="tablist" aria-label="Photos">{VUES.map((v, i) => <button key={v} role="tab" aria-selected={photo === i} onClick={() => setPhoto(i)} data-testid={`vignette-${i}`} className={`block w-full ${photo === i ? "ring-1 ring-black" : "opacity-70 hover:opacity-100"}`}><Visuel p={p} n={i} vue={v} className="aspect-[3/4] w-full" /></button>)}</div>
+          <Visuel p={p} n={photo} vue={VUES[photo]} className="aspect-[3/4] w-full" />
         </div>
         <div className="md:sticky md:top-24 h-fit">
           <h1 className="text-2xl sm:text-3xl font-bold">{tr(p.nom)}</h1>
