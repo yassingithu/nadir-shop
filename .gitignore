@@ -8,3 +8,4 @@ desktop/app
 desktop/dist
 desktop/node_modules
 desktop/package-lock.json
+public/sitemap.xml

@@ -3,3 +3,5 @@ Disallow: /admin
 Disallow: /panier
 Disallow: /commande
 Disallow: /suivi
+
+Sitemap: https://swtfamily.com/sitemap.xml
