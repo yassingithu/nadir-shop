@@ -19,7 +19,10 @@ export async function charger(): Promise<{ produits: Produit[]; categories: Cate
   if (p.error || c.error || r.error) throw new Error("chargement");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const produits = (p.data as any[]).map((x) => ({ ...x, categorie: x.categorie?.slug ?? null, couleur: "#d9c7a3", variantes: (x.variantes as { actif: boolean }[]).filter((v) => v.actif) })) as Produit[];
-  return { produits, categories: c.data as Categorie[], reglages: r.data as unknown as Reglages };
+  const reglages = r.data as unknown as Reglages;
+  // Ancien nom provisoire : affiche le nom définitif même si la base n'a pas encore été modifiée.
+  if (!reglages.nom_boutique || /^nadir shop$/i.test(reglages.nom_boutique.trim())) reglages.nom_boutique = "Sweet Family";
+  return { produits, categories: c.data as Categorie[], reglages };
 }
 
 export async function passerCommande(infos: Infos, mode: "livraison" | "virement", lignes: Ligne[], langue: string): Promise<{ numero: number; total: number }> {
