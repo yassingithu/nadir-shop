@@ -12,19 +12,19 @@ export default function PanierPage() {
   const { lignes, changer, retirer } = usePanier();
   const d = detail(lignes, produits, reglages);
   if (!d.items.length) return (
-    <div className="text-center py-16"><p className="titre text-2xl">{t("Votre panier est vide")}</p><Link to="/" className="btn-plein mt-6">{t("Continuer mes achats")}</Link></div>
+    <div className="text-center py-16"><p className="font-bold text-2xl">{t("Votre panier est vide")}</p><Link to="/" className="btn-plein mt-6">{t("Continuer mes achats")}</Link></div>
   );
   return (
     <div className="grid lg:grid-cols-[1fr_360px] gap-10">
-      <ul className="divide-y" style={{ borderColor: "var(--trait)" }}>
+      <ul className="divide-y trait">
         {d.items.map(({ l, p, v, prix: pu }) => (
           <li key={l.variante_id} className="flex gap-4 py-5" data-testid="ligne-panier">
-            <Visuel p={p} className="h-24 w-20 rounded-xl shrink-0" />
+            <Visuel p={p} className="h-24 w-20 shrink-0" />
             <div className="flex-1 min-w-0">
               <div className="font-medium">{tr(p.nom)}</div>
               <div className="text-sm opacity-60">{Object.values(v.valeurs).join(" · ")}</div>
               <div className="mt-3 flex items-center gap-3">
-                <div className="flex items-center rounded-full border" style={{ borderColor: "var(--trait)" }} aria-label={t("Quantité")}>
+                <div className="flex items-center border trait" aria-label={t("Quantité")}>
                   <button className="h-9 w-9 grid place-items-center" onClick={() => changer(l.variante_id, l.quantite - 1)} aria-label="−"><Minus className="h-4 w-4" /></button>
                   <span className="w-8 text-center text-sm" data-testid="quantite">{l.quantite}</span>
                   <button className="h-9 w-9 grid place-items-center disabled:opacity-30" disabled={l.quantite >= v.stock} onClick={() => changer(l.variante_id, l.quantite + 1)} aria-label="+"><Plus className="h-4 w-4" /></button>
@@ -36,10 +36,10 @@ export default function PanierPage() {
           </li>
         ))}
       </ul>
-      <aside className="rounded-2xl bg-white p-6 h-fit space-y-3" style={{ border: "1px solid var(--trait)" }}>
+      <aside className="rounded-2xl bg-[#f4f4f4] p-6 h-fit space-y-3">
         <Ligne a={t("Sous-total")} b={prix(d.sous)} />
         <Ligne a={t("Livraison")} b={d.frais === 0 ? t("Gratuite") : prix(d.frais)} />
-        <div className="border-t pt-3" style={{ borderColor: "var(--trait)" }}><Ligne a={t("Total")} b={prix(d.total)} fort /></div>
+        <div className="border-t pt-3 trait"><Ligne a={t("Total")} b={prix(d.total)} fort /></div>
         <Link to="/commande" className="btn-plein w-full mt-2" data-testid="commander">{t("Commander")}</Link>
       </aside>
     </div>

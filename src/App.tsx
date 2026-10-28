@@ -1,47 +1,97 @@
-import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
-import { ShoppingBag } from "lucide-react";
+import { useEffect, useState } from "react";
+import { BrowserRouter, Link, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { Menu, Search, ShoppingBag, X } from "lucide-react";
 import { LangueProvider, useLangue, type Langue } from "./lib/i18n";
 import { PanierProvider, usePanier } from "./lib/panier";
 import { DonneesProvider, useDonnees } from "./lib/donnees";
 import { modeDemo } from "./lib/api";
+import Tiroir from "./lib/Tiroir";
+import Accueil from "./pages/Accueil";
 import Boutique from "./pages/Boutique";
 import ProduitPage from "./pages/ProduitPage";
 import PanierPage from "./pages/PanierPage";
 import CommandePage from "./pages/CommandePage";
 import SuiviPage from "./pages/SuiviPage";
 
-const LANGUES: [Langue, string][] = [["fr", "FR"], ["en", "EN"], ["ar", "ع"]];
+const LANGUES: [Langue, string][] = [["fr", "FR"], ["en", "EN"], ["ar", "عربي"]];
+
+function Annonce() {
+  const { t, prix } = useLangue();
+  const { reglages } = useDonnees();
+  const s = reglages.livraison_gratuite_des;
+  return (
+    <div className="text-white text-xs text-center py-2 px-4" style={{ background: "var(--encre)" }}>
+      {modeDemo ? t("Mode démonstration : les produits et commandes ne sont pas enregistrés.") : s != null ? t("Livraison offerte dès {n}", { n: prix(s) }) + " · " + t("Paiement à la livraison ou par virement") : t("Paiement à la livraison ou par virement")}
+    </div>
+  );
+}
 
 function Entete() {
-  const { langue, setLangue, t } = useLangue();
-  const { nombre } = usePanier();
-  const { reglages } = useDonnees();
+  const { langue, setLangue, t, tr } = useLangue();
+  const { nombre, setOuvert } = usePanier();
+  const { reglages, categories } = useDonnees();
+  const [menu, setMenu] = useState(false);
+  const [rech, setRech] = useState(false);
+  const [q, setQ] = useState("");
+  const nav = useNavigate();
+  const loc = useLocation();
+  useEffect(() => { setMenu(false); setRech(false); }, [loc.pathname, loc.search]);
+  const lien = "px-1 py-5 text-sm font-medium border-b-2 border-transparent hover:border-black";
+  const chercher = (e: React.FormEvent) => { e.preventDefault(); if (q.trim()) nav(`/boutique?q=${encodeURIComponent(q.trim())}`); };
   return (
-    <header className="sticky top-0 z-30 border-b backdrop-blur bg-[#f6f1e9]/90" style={{ borderColor: "var(--trait)" }}>
-      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
-        <Link to="/" className="titre text-2xl" data-testid="logo">{reglages.nom_boutique}</Link>
-        <nav className="flex items-center gap-1 sm:gap-3 text-sm">
-          <Link to="/suivi" className="hidden sm:inline px-3 py-2 opacity-70 hover:opacity-100">{t("Suivre ma commande")}</Link>
-          <div className="flex rounded-full border overflow-hidden" style={{ borderColor: "var(--trait)" }} role="group" aria-label="Langue">
-            {LANGUES.map(([l, n]) => <button key={l} onClick={() => setLangue(l)} aria-pressed={langue === l} data-testid={`langue-${l}`} className={`px-3 h-9 text-xs font-medium ${langue === l ? "text-white" : ""}`} style={langue === l ? { background: "var(--encre)" } : undefined}>{n}</button>)}
-          </div>
-          <Link to="/panier" className="relative grid place-items-center h-10 w-10 rounded-full" aria-label={t("Panier")} data-testid="panier-lien">
-            <ShoppingBag className="h-5 w-5" />
-            {nombre > 0 && <span className="absolute -top-0.5 -end-0.5 h-5 min-w-5 px-1 rounded-full text-[11px] text-white grid place-items-center" style={{ background: "var(--accent)" }} data-testid="panier-nombre">{nombre}</span>}
-          </Link>
+    <header className="sticky top-0 z-30 bg-white border-b trait">
+      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center gap-4">
+        <button className="lg:hidden" onClick={() => setMenu(true)} aria-label={t("Menu")} data-testid="menu-ouvrir"><Menu className="h-6 w-6" /></button>
+        <Link to="/" className="text-base sm:text-xl font-bold tracking-[0.14em] sm:tracking-[0.18em] uppercase whitespace-nowrap" data-testid="logo">{reglages.nom_boutique}</Link>
+        <nav className="hidden lg:flex items-center gap-7 ms-8" aria-label="Catégories">
+          <NavLink to="/boutique?nouveautes=1" className={lien}>{t("Nouveautés")}</NavLink>
+          {categories.map((c) => <NavLink key={c.slug} to={`/boutique?cat=${c.slug}`} className={lien} data-testid={`nav-${c.slug}`}>{tr(c.nom)}</NavLink>)}
+          <NavLink to="/boutique?promo=1" className={`${lien} text-[var(--promo)]`}>{t("Promotions")}</NavLink>
         </nav>
+        <div className="ms-auto flex items-center gap-1 sm:gap-3">
+          <form onSubmit={chercher} className="hidden md:flex items-center border-b border-black/60 focus-within:border-black">
+            <Search className="h-4 w-4 opacity-60" /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("Rechercher un produit")} aria-label={t("Rechercher un produit")} className="w-44 h-9 ps-2 text-sm bg-transparent focus:outline-none" data-testid="recherche" />
+          </form>
+          <button className="md:hidden h-10 w-10 grid place-items-center" onClick={() => setRech(!rech)} aria-label={t("Rechercher un produit")}><Search className="h-5 w-5" /></button>
+          <div className="flex text-xs" role="group" aria-label="Langue">
+            {LANGUES.map(([l, n]) => <button key={l} onClick={() => setLangue(l)} aria-pressed={langue === l} data-testid={`langue-${l}`} className={`px-2 h-9 ${langue === l ? "font-bold underline underline-offset-4" : "opacity-60"}`}>{n}</button>)}
+          </div>
+          <button onClick={() => setOuvert(true)} className="relative grid place-items-center h-10 w-10" aria-label={t("Panier")} data-testid="panier-lien">
+            <ShoppingBag className="h-5 w-5" />
+            {nombre > 0 && <span className="absolute top-0.5 end-0 h-4 min-w-4 px-1 rounded-full text-[10px] text-white grid place-items-center bg-black" data-testid="panier-nombre">{nombre}</span>}
+          </button>
+        </div>
       </div>
+      {rech && <form onSubmit={chercher} className="md:hidden border-t trait px-4 py-3"><input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("Rechercher un produit")} className="champ" /></form>}
+      {menu && (
+        <div className="fixed inset-0 z-50 bg-white overflow-y-auto" data-testid="menu-mobile">
+          <div className="flex items-center justify-between px-4 h-16 border-b trait"><span className="font-bold tracking-[0.18em] uppercase">{reglages.nom_boutique}</span><button onClick={() => setMenu(false)} aria-label={t("Fermer")}><X className="h-6 w-6" /></button></div>
+          <ul className="px-4 divide-y trait text-lg">
+            <li><Link className="block py-4" to="/boutique?nouveautes=1">{t("Nouveautés")}</Link></li>
+            {categories.map((c) => <li key={c.slug}><Link className="block py-4" to={`/boutique?cat=${c.slug}`}>{tr(c.nom)}</Link></li>)}
+            <li><Link className="block py-4" style={{ color: "var(--promo)" }} to="/boutique?promo=1">{t("Promotions")}</Link></li>
+            <li><Link className="block py-4 text-base" to="/suivi">{t("Suivre ma commande")}</Link></li>
+          </ul>
+        </div>
+      )}
     </header>
   );
 }
 
 function Pied() {
-  const { t } = useLangue();
-  const { reglages } = useDonnees();
+  const { t, tr } = useLangue();
+  const { reglages, categories } = useDonnees();
+  const col = "space-y-2.5 text-sm";
   return (
-    <footer className="mt-20 border-t py-8 text-sm text-center opacity-70" style={{ borderColor: "var(--trait)" }}>
-      {reglages.whatsapp && <a className="underline" href={`https://wa.me/${reglages.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">{t("Une question ? Écrivez-nous sur WhatsApp")}</a>}
-      <p className="mt-2">© {new Date().getFullYear()} {reglages.nom_boutique}</p>
+    <footer className="mt-24 bg-[#f4f4f4]">
+      <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="col-span-2 md:col-span-1"><p className="text-lg font-bold tracking-[0.18em] uppercase">{reglages.nom_boutique}</p><p className="mt-3 text-sm opacity-70 max-w-xs">{t("Commande sécurisée : vous ne payez qu'à la livraison ou après votre virement.")}</p></div>
+        <ul className={col}><li className="font-semibold">{t("Boutique")}</li>{categories.map((c) => <li key={c.slug}><Link className="hover:underline" to={`/boutique?cat=${c.slug}`}>{tr(c.nom)}</Link></li>)}<li><Link className="hover:underline" to="/boutique?promo=1">{t("Promotions")}</Link></li></ul>
+        <ul className={col}><li className="font-semibold">{t("Aide")}</li><li><Link className="hover:underline" to="/suivi">{t("Suivre ma commande")}</Link></li>
+          {reglages.whatsapp && <li><a className="hover:underline" href={`https://wa.me/${reglages.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">WhatsApp</a></li>}</ul>
+        <ul className={col}><li className="font-semibold">{t("Modes de paiement")}</li><li>{t("Paiement à la livraison")}</li><li>{t("Virement bancaire")}</li></ul>
+      </div>
+      <div className="border-t trait py-5 text-center text-xs opacity-60">© {new Date().getFullYear()} {reglages.nom_boutique}</div>
     </footer>
   );
 }
@@ -50,11 +100,13 @@ export default function App() {
   return (
     <LangueProvider><DonneesProvider><PanierProvider>
       <BrowserRouter>
+        <Annonce />
         <Entete />
-        <LangueBandeau />
-        <main className="max-w-6xl mx-auto px-4 pt-8">
+        <Tiroir />
+        <main className="max-w-7xl mx-auto px-4 pt-6 sm:pt-8">
           <Routes>
-            <Route path="/" element={<Boutique />} />
+            <Route path="/" element={<Accueil />} />
+            <Route path="/boutique" element={<Boutique />} />
             <Route path="/produit/:slug" element={<ProduitPage />} />
             <Route path="/panier" element={<PanierPage />} />
             <Route path="/commande" element={<CommandePage />} />
@@ -65,9 +117,4 @@ export default function App() {
       </BrowserRouter>
     </PanierProvider></DonneesProvider></LangueProvider>
   );
-}
-
-function LangueBandeau() {
-  const { t } = useLangue();
-  return modeDemo ? <div className="text-center text-xs py-1.5 text-white" style={{ background: "var(--encre)" }}>{t("Mode démonstration : les produits et commandes ne sont pas enregistrés.")}</div> : null;
 }

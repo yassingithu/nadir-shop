@@ -13,7 +13,7 @@ export default function SuiviPage() {
   };
   return (
     <div className="max-w-md mx-auto">
-      <h1 className="titre text-3xl mb-6">{t("Suivre ma commande")}</h1>
+      <h1 className="font-bold text-3xl mb-6">{t("Suivre ma commande")}</h1>
       <form onSubmit={chercher} className="space-y-4">
         <input className="champ" inputMode="numeric" placeholder={t("Numéro de commande")} value={num} onChange={(e) => setNum(e.target.value)} data-testid="suivi-numero" />
         <input className="champ" type="tel" placeholder={t("Téléphone")} value={tel} onChange={(e) => setTel(e.target.value)} data-testid="suivi-tel" />
@@ -21,8 +21,8 @@ export default function SuiviPage() {
       </form>
       {res === "aucune" && <p className="mt-6 text-red-700">{t("Commande introuvable. Vérifiez le numéro et le téléphone.")}</p>}
       {res && res !== "aucune" && (
-        <div className="mt-6 rounded-2xl bg-white p-6 space-y-2" style={{ border: "1px solid var(--trait)" }} data-testid="suivi-resultat">
-          <p className="titre text-xl">{t("Numéro de commande ")}{res.numero}</p>
+        <div className="mt-6 bg-white p-6 space-y-2" data-testid="suivi-resultat">
+          <p className="font-bold text-xl">{t("Numéro de commande ")}{res.numero}</p>
           <p>{t("Statut")} : <b>{t(STATUTS[res.statut] ?? res.statut)}</b></p>
           {res.mode_paiement === "virement" && <p className="text-sm opacity-70">{res.paiement_recu ? t("Paiement reçu") : t("En attente de paiement")}</p>}
           {res.total > 0 && <p>{t("Total")} : {prix(res.total)}</p>}
