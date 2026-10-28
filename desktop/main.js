@@ -6,7 +6,11 @@ const fs = require("fs");
 const { pathToFileURL } = require("url");
 
 const DOSSIER = path.join(__dirname, "app");
-const ACCUEIL = "app://nadir/admin";
+// L'appli affiche le site EN LIGNE (toujours à jour, aucune réinstallation pour les nouveautés).
+// Si le site est injoignable, elle bascule sur la copie embarquée.
+const SITE = (process.env.NADIR_SITE || "https://nadir-shop.sel-yassin.workers.dev").replace(/\/$/, "");
+let base = "app://nadir";
+const ACCUEIL = () => base + "/admin";
 
 protocol.registerSchemesAsPrivileged([{ scheme: "app", privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
 
@@ -23,7 +27,15 @@ function servir(requete) {
   return net.fetch(pathToFileURL(chemin).toString());
 }
 
-const estInterne = (u) => { try { return new URL(u).protocol === "app:"; } catch { return false; } };
+const estInterne = (u) => { try { const x = new URL(u); return x.protocol === "app:" || x.origin === new URL(SITE).origin; } catch { return false; } };
+
+async function choisirBase() {
+  try {
+    const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 5000);
+    const r = await net.fetch(SITE + "/gestion.webmanifest", { signal: ctrl.signal }); clearTimeout(t);
+    if (r.ok) base = SITE;
+  } catch { /* hors ligne : copie embarquée */ }
+}
 const ouvrirHorsApp = (u) => { if (/^(https?|mailto|tel):/i.test(u)) shell.openExternal(u); };
 
 const DEPOT = "yassingithu/nadir-shop";
@@ -62,7 +74,7 @@ function creerFenetre() {
     ouvrirHorsApp(url); return { action: "deny" };
   });
   fenetre.webContents.on("will-navigate", (e, url) => { if (!estInterne(url)) { e.preventDefault(); ouvrirHorsApp(url); } });
-  fenetre.loadURL(ACCUEIL);
+  fenetre.loadURL(ACCUEIL());
 }
 
 function construireMenu() {
@@ -72,8 +84,8 @@ function construireMenu() {
     { role: "editMenu", label: "Édition" },
     { label: "Aide", submenu: [{ label: "Rechercher une mise à jour…", click: () => void verifierMiseAJour(true) }] },
     { label: "Aller", submenu: [
-      { label: "Administration", accelerator: "CmdOrCtrl+1", click: () => fenetre?.loadURL(ACCUEIL) },
-      { label: "Voir la boutique", click: () => fenetre?.loadURL("app://nadir/") },
+      { label: "Administration", accelerator: "CmdOrCtrl+1", click: () => fenetre?.loadURL(ACCUEIL()) },
+      { label: "Voir la boutique", click: () => fenetre?.loadURL(base + "/") },
       { type: "separator" },
       { label: "Précédent", accelerator: "CmdOrCtrl+[", click: () => fenetre?.webContents.navigationHistory.goBack() },
       { label: "Suivant", accelerator: "CmdOrCtrl+]", click: () => fenetre?.webContents.navigationHistory.goForward() },
@@ -84,7 +96,7 @@ function construireMenu() {
   Menu.setApplicationMenu(Menu.buildFromTemplate(modele));
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   app.setName("Sweet Family Gestion");
   protocol.handle("app", servir);
   // Téléchargements (export Excel) : enregistrés dans « Téléchargements », sans fenêtre de choix
@@ -96,6 +108,7 @@ app.whenReady().then(() => {
     item.once("done", (_ev, etat) => { if (etat === "completed") shell.showItemInFolder(cible); });
   });
   construireMenu();
+  await choisirBase();
   creerFenetre();
   setTimeout(() => void verifierMiseAJour(false), 6000);
   app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) creerFenetre(); });
